@@ -174,3 +174,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Subsets development artifacts
+.venv/
+dist/
+build/
+*.egg-info/
+__pycache__/
+.pytest_cache/

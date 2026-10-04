@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subsets"
+version = "0.1.0"
+description = "Discover agent skills, organize groups, and apply recoverable selections."
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6,<7", "textual>=8.2,<9"]
+
+[project.scripts]
+subsets = "subsets.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
