@@ -1,0 +1,4 @@
+http://subsets.subcult.tv {
+    encode gzip zstd
+    reverse_proxy subsets-landing:8080
+}

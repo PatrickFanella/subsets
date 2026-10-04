@@ -1,0 +1,16 @@
+services:
+  subsets-landing:
+    image: ${SUBSETS_IMAGE:?Set the qualified Subsets landing image}
+    container_name: subsets-landing
+    networks: [projects]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+      tv.subcult.source-revision: ${SUBSETS_REVISION:?Set the source revision}
+networks:
+  projects:
+    external: true

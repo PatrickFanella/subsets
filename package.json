@@ -1,9 +1,26 @@
 {
   "name": "@subcult/subsets",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-alpha.2",
   "description": "Group your agent skills. Activate the set you need.",
   "type": "module",
   "license": "AGPL-3.0-only",
+  "homepage": "https://subsets.subcult.tv",
+  "funding": {
+    "type": "patreon",
+    "url": "https://support.subcult.tv"
+  },
+  "keywords": [
+    "agent-skills",
+    "skills",
+    "cli",
+    "tui",
+    "codex",
+    "claude",
+    "opencode"
+  ],
+  "bugs": {
+    "url": "https://git.subcult.tv/subculture-collective/subsets/issues"
+  },
   "engines": {
     "node": ">=22"
   },
@@ -15,7 +32,12 @@
     "README.md",
     "LICENSE",
     "docs/discovery-ownership.md",
-    "docs/npm.md"
+    "docs/npm.md",
+    "docs/usage.md",
+    "docs/branding.md",
+    "assets/brand/logos",
+    "assets/brand/brand-export.json",
+    "assets/brand/social"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -42,7 +64,7 @@
     "typescript": "^5.9.0"
   },
   "publishConfig": {
-    "registry": "https://git.subcult.tv/api/packages/subculture-collective/npm/",
+    "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "os": [

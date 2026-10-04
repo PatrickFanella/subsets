@@ -1,0 +1,4 @@
+assets/brand/**/*.png filter=lfs diff=lfs merge=lfs -text
+site/assets/brand/**/*.png filter=lfs diff=lfs merge=lfs -text
+site/assets/brand/**/*.ttf filter=lfs diff=lfs merge=lfs -text
+site/assets/brand/fonts/*-OFL.txt -text whitespace=-blank-at-eol,-blank-at-eof,cr-at-eol
