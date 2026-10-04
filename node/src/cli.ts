@@ -3,8 +3,8 @@ import { Manager } from "./manager.js";
 import { Store } from "./storage.js";
 import { Legacy, backend, editGroup } from "./legacy.js";
 import { SubsetsError } from "./types.js";
-export const VERSION = "0.2.0-alpha.1";
-const HELP = `Subsets ${VERSION} — group your agent skills, activate the set you need.
+export const VERSION = "0.2.0-alpha.2";
+const HELP = `subsets ${VERSION} — All your skills. Only the set you need.
 
 Usage: subsets [options] [command]
 
@@ -32,6 +32,7 @@ Examples:
   subsets rollback TRANSACTION_ID
 
 Standalone mode requires Node only. The existing backend requires Python 3.
+https://subsets.subcult.tv · by SUBCULT · https://support.subcult.tv
 `;
 export async function main(argv = process.argv.slice(2)) {
   let json = false;

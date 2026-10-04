@@ -38,7 +38,7 @@ test("TUI adopts, searches, groups, previews and confirms apply", async (t) => {
     await pause();
   };
   await pause();
-  assert.match(app.lastFrame(), /SUBSETS/);
+  assert.match(app.lastFrame(), /subsets.*by SUBCULT/);
   await key("2");
   await key("a");
   assert.match(app.lastFrame(), /Adopt this folder/);

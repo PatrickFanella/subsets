@@ -1,0 +1,31 @@
+{
+  "brand": "subsets",
+  "status": "approved identity",
+  "assets": [
+    {
+      "path": "logos/mark-primary.svg",
+      "sha256": "cf5be25adce45946e87f686de57ee99c75bec97c056085fb380fc7dc01df047f",
+      "bytes": 476
+    },
+    {
+      "path": "logos/mark-mono.svg",
+      "sha256": "b71b9126abe49dad0ebce1b817dfdaa672ed89be027f467178c24538e907e04a",
+      "bytes": 476
+    },
+    {
+      "path": "logos/lockup-primary-outlined.svg",
+      "sha256": "0710da2207761adae878497909a6a2cee67d3197c1d3c458d2827b7db60a3f69",
+      "bytes": 5088
+    },
+    {
+      "path": "social/banner-x-bluesky.png",
+      "sha256": "fd6126037401cd06dbdc30193690a0f2be038ff24e80d0c9ed24a2f2dbd46f10",
+      "bytes": 42145
+    },
+    {
+      "path": "social/avatar.png",
+      "sha256": "dea7a72ac2f65259ca77badefccb51bf1e69beb93d750ccaf2d879c312894727",
+      "bytes": 2349
+    }
+  ]
+}

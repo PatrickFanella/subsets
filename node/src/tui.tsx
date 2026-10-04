@@ -25,7 +25,9 @@ export function SubsetsApp({
       manager.store.load().activeGroups.map((n) => "local:" + n),
     ),
     [notice, setNotice] = useState(
-      "Discovery is read-only. Adopt an unmanaged folder to begin.",
+      Object.keys(manager.store.load().roots).length
+        ? "Choose skills or groups. Preview the changes before applying."
+        : "Discovery is read-only. Adopt an unmanaged folder to begin.",
     ),
     [query, setQuery] = useState(""),
     [entry, setEntry] = useState<"search" | "group" | null>(null),
@@ -215,15 +217,16 @@ export function SubsetsApp({
   });
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Text bold color="cyan">
-        SUBSETS <Text color="gray"> · discover / group / apply</Text>
+      <Text bold color="#94f7b7">
+        subsets{" "}
+        <Text color="gray"> · by SUBCULT · discover / group / apply</Text>
       </Text>
       <Text color="gray">
         1 Skills 2 Folders 3 Groups 4 Recovery / Search r Rescan q Quit
       </Text>
       <Text>
         Selected groups:{" "}
-        <Text color="green">
+        <Text color="#94f7b7">
           {clean(
             groups.map((s) => s.slice(s.indexOf(":") + 1)).join(", ") ||
               "core (always included)",
@@ -232,8 +235,8 @@ export function SubsetsApp({
       </Text>
       <Box
         flexDirection="column"
-        borderStyle="round"
-        borderColor="cyan"
+        borderStyle="single"
+        borderColor="#94f7b7"
         paddingX={1}
       >
         <Text bold>
@@ -268,7 +271,10 @@ export function SubsetsApp({
             label = j.id + " · " + j.status + " · " + j.label;
           }
           return (
-            <Text key={index} color={index === selected ? "cyan" : undefined}>
+            <Text
+              key={index}
+              color={index === selected ? "#94f7b7" : undefined}
+            >
               {index === selected ? "› " : "  "}
               {clean(label)}
             </Text>

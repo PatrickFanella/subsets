@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="canonical" href="https://subsets.subcult.tv/" />
+    <meta property="og:url" content="https://subsets.subcult.tv/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:image"
+      content="https://subsets.subcult.tv/assets/brand/social/og.png"
+    />
+    <title>Subsets — All your skills. Only the set you need.</title>
+    <meta
+      name="description"
+      content="Discover local agent skills, organize named groups, and preview and apply the set you need. A terminal tool by SUBCULT."
+    />
+    <meta
+      property="og:title"
+      content="Subsets — All your skills. Only the set you need."
+    />
+    <meta
+      property="og:description"
+      content="A local skill manager for your agents. Discover, group, preview, apply."
+    />
+    <meta
+      property="og:image"
+      content="https://subsets.subcult.tv/assets/brand/social/og.png"
+    />
+    <link
+      rel="icon"
+      href="assets/brand/logos/mark-primary.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="assets/brand/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="page">
+      <header class="site-header">
+        <a class="identity" href="#" aria-label="Subsets home"
+          ><img
+            src="assets/brand/logos/mark-primary.svg"
+            width="48"
+            height="48"
+            alt=""
+          /><span><strong>subsets</strong><small>by SUBCULT</small></span></a
+        >
+        <nav aria-label="Main navigation">
+          <a href="#how">How it works</a><a href="#install">Install</a
+          ><a href="https://git.subcult.tv/subculture-collective/subsets"
+            >Source <span aria-hidden="true">↗</span></a
+          >
+        </nav>
+      </header>
+      <main id="main">
+        <section class="hero" aria-labelledby="headline">
+          <div class="hero-copy">
+            <p class="eyebrow">
+              <span class="status-dot" aria-hidden="true"></span> A LOCAL TOOL
+              FOR AGENT SKILLS
+            </p>
+            <h1 id="headline">
+              All your skills.<br />Only the set<br />you need.
+            </h1>
+            <p class="intro">
+              Discover the skills on your computer. Group them for writing,
+              development, or whatever’s next. Preview the changes, then apply
+              your set.
+            </p>
+            <div class="actions">
+              <a class="button primary" href="#install"
+                >Get Subsets <span aria-hidden="true">↓</span></a
+              ><a
+                class="text-link"
+                href="https://git.subcult.tv/subculture-collective/subsets/src/branch/main/README.md"
+                >Read the guide <span aria-hidden="true">↗</span></a
+              >
+            </div>
+            <p class="availability">
+              Node.js 22+ <span aria-hidden="true">/</span> Linux tested
+              <span aria-hidden="true">/</span> npm alpha
+            </p>
+          </div>
+          <figure class="product">
+            <div class="mint-field" aria-hidden="true"></div>
+            <div class="utility-window">
+              <div class="window-title">
+                <span
+                  ><img
+                    src="assets/brand/logos/mark-mono.svg"
+                    alt=""
+                    width="25"
+                    height="25"
+                  />
+                  subsets</span
+                ><span class="window-caption">TERMINAL / LOCAL</span>
+              </div>
+              <div
+                class="capture-controls"
+                role="group"
+                aria-label="Choose a captured TUI view"
+              >
+                <button type="button" data-view="skills" aria-pressed="true">
+                  Skills</button
+                ><button type="button" data-view="groups" aria-pressed="false">
+                  Groups</button
+                ><button type="button" data-view="search" aria-pressed="false">
+                  Search
+                </button>
+              </div>
+              <div
+                class="terminal-scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Captured Subsets terminal output"
+              >
+                <pre id="terminal-output">
+Loading the captured terminal view…</pre>
+              </div>
+              <div class="command-bar">
+                <span aria-hidden="true">$</span
+                ><code>subsets apply --creative-writing</code>
+              </div>
+            </div>
+            <figcaption>
+              Actual TUI render · sample skill collection
+              <span class="capture-version">0.2.0-alpha.2</span>
+            </figcaption>
+          </figure>
+        </section>
+        <div class="section-divider">
+          <span>YOUR COLLECTION. YOUR WORKING SET.</span
+          ><span aria-hidden="true">01 — 04</span>
+        </div>
+        <section id="how" class="workflow" aria-labelledby="workflow-title">
+          <div class="section-lead">
+            <p class="eyebrow">A FEW DELIBERATE STEPS</p>
+            <h2 id="workflow-title">A set for the<br />work at hand.</h2>
+            <p>Your library stays available.<br />You choose what’s active.</p>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-number">01</span>
+              <div>
+                <h3>Find what’s there.</h3>
+                <p>
+                  Scan supported user and project skill folders. Review where
+                  each skill lives and who owns it.
+                </p>
+                <code>subsets discover</code>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">02</span>
+              <div>
+                <h3>Make a working set.</h3>
+                <p>
+                  Adopt an unmanaged folder, then group its skills for a task.
+                  Add everyday essentials to <code>core</code>.
+                </p>
+                <code
+                  >subsets group create creative-writing editing research</code
+                >
+              </div>
+            </li>
+            <li>
+              <span class="step-number">03</span>
+              <div>
+                <h3>Look before you apply.</h3>
+                <p>
+                  Preview what will change. Apply the selection when it’s right,
+                  then start a fresh agent session.
+                </p>
+                <code>subsets apply --creative-writing --dry-run</code>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">04</span>
+              <div>
+                <h3>Keep a way back.</h3>
+                <p>
+                  Inactive skills stay in your private library. Review
+                  transaction history and roll back a change when the saved
+                  state still matches.
+                </p>
+                <code>subsets history</code>
+              </div>
+            </li>
+          </ol>
+        </section>
+        <aside class="ownership">
+          <img
+            src="assets/brand/logos/mark-mono.svg"
+            alt=""
+            width="48"
+            height="48"
+          />
+          <div>
+            <h3>You decide which folders it manages.</h3>
+            <p>
+              Discovery is read-only. Adoption is explicit. Package and plugin
+              folders keep their owners, and later edits stop apply or rollback
+              rather than being overwritten.
+            </p>
+            <a
+              href="https://git.subcult.tv/subculture-collective/subsets/src/branch/main/docs/discovery-ownership.md"
+              >Read the folder ownership rules
+              <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </aside>
+        <section id="install" class="install" aria-labelledby="install-title">
+          <div>
+            <p class="eyebrow">TAKE IT FOR A SPIN</p>
+            <h2 id="install-title">
+              A little utility.<br />A useful collection.
+            </h2>
+            <p>
+              Install the native npm alpha from the SUBCULT registry, then open
+              it in your terminal.
+            </p>
+            <p class="install-note">
+              Requires Node.js 22 or newer. Linux is tested; macOS remains
+              unverified. Windows is not supported by this preview.
+            </p>
+          </div>
+          <div class="install-window">
+            <div class="install-title">
+              <span>INSTALL / NPM ALPHA</span
+              ><button id="copy-install" type="button">Copy commands</button>
+            </div>
+            <pre id="install-commands">
+npm config set @subcult:registry https://git.subcult.tv/api/packages/subculture-collective/npm/
+npm install -g @subcult/subsets@alpha
+subsets</pre>
+            <p
+              id="copy-status"
+              class="copy-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+            <a
+              href="https://git.subcult.tv/subculture-collective/subsets/src/branch/main/docs/npm.md"
+              >Installation, updates, and authentication
+              <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </section>
+      </main>
+      <footer>
+        <a class="footer-wordmark" href="#">subsets</a
+        ><span>A tool by <a href="https://subcult.tv">SUBCULT</a></span>
+        <div>
+          <a href="brand.html">Brand study</a
+          ><a
+            href="https://git.subcult.tv/subculture-collective/subsets/src/branch/main/LICENSE"
+            >AGPL-3.0</a
+          ><a href="https://git.subcult.tv/subculture-collective/subsets"
+            >Source ↗</a
+          >
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

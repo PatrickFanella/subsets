@@ -144,8 +144,7 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
+# The site/ directory contains the maintained landing-page prototype.
 
 # mypy
 .mypy_cache/
