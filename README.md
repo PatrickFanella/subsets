@@ -25,15 +25,14 @@ Start with `subsets roots` and explicitly adopt an unmanaged folder before using
 
 ## Get the alpha
 
-The native npm edition requires **Node.js 22 or newer** and an interactive terminal for the TUI. The alpha is available from the SUBCULT registry:
+The native npm edition requires **Node.js 22 or newer** and an interactive terminal for the TUI. Install the alpha from npmjs.org:
 
 ```sh
-npm config set @subcult:registry https://git.subcult.tv/api/packages/subculture-collective/npm/
 npm install -g @subcult/subsets@alpha
 subsets
 ```
 
-Linux is tested. macOS remains unverified; Windows is not supported by this preview. The standalone native workflow needs no Python. Public npmjs.org publication is being prepared; the command above uses the hosted SUBCULT registry.
+Linux is tested. macOS remains unverified; Windows is not supported by this preview. The standalone native workflow needs no Python. If you previously configured the `@subcult` scope for Gitea, set it to `https://registry.npmjs.org/` before installing or updating from public npm.
 
 [Installation and updates](docs/npm.md) · [Full workflow guide](docs/usage.md) · [Folder ownership and recovery](docs/discovery-ownership.md)
 

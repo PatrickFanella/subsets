@@ -3,7 +3,7 @@ import { Manager } from "./manager.js";
 import { Store } from "./storage.js";
 import { Legacy, backend, editGroup } from "./legacy.js";
 import { SubsetsError } from "./types.js";
-export const VERSION = "0.2.0-alpha.2";
+export const VERSION = "0.2.0-alpha.3";
 const HELP = `subsets ${VERSION} — All your skills. Only the set you need.
 
 Usage: subsets [options] [command]
