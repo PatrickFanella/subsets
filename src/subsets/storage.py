@@ -91,14 +91,8 @@ def text_operation(path: Path, expected, payload: str, mode=0o644):
 
 class Store:
     def __init__(self, path: Path | None = None):
-        base = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share")))
-        default, legacy = base / "subsets", base / "skilldeck"
-        configured = path or os.environ.get("SUBSETS_HOME") or os.environ.get("SKILLDECK_HOME")
-        if configured is None:
-            if (default / "registry.json").exists() and (legacy / "registry.json").exists():
-                raise DeckError("Both Subsets and Skilldeck registries exist; select one with --state")
-            configured = legacy if (legacy / "registry.json").exists() else default
-        self.path = Path(configured).expanduser().absolute()
+        default = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share"))) / "subsets"
+        self.path = Path(path or os.environ.get("SUBSETS_HOME", str(default))).expanduser().absolute()
         self.registry = self.path / "registry.json"
 
     def load(self):

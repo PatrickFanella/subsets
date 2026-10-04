@@ -26,7 +26,7 @@ def backend_for(manager, groups, legacy, backend="auto"):
         if not legacy:
             raise DeckError("No existing codex-skills backend detected")
         return legacy
-    if backend in {"subsets", "skilldeck"}:
+    if backend == "subsets":
         return manager
     local = manager.store.load()["groups"]
     custom = set(groups) - {"core"}
@@ -84,14 +84,14 @@ def parser():
                                 epilog="Example: subsets group create creative-writing poetry editing")
     group.add_argument("action", choices=["create", "add", "remove"])
     group.add_argument("name"); group.add_argument("skills", nargs="*")
-    group.add_argument("--backend", choices=["auto", "subsets", "skilldeck", "existing"], default="auto",
+    group.add_argument("--backend", choices=["auto", "subsets", "existing"], default="auto",
                        help="Edit a Subsets group or an existing canonical profile")
     for name in ["plan", "apply"]:
         sub = commands.add_parser(name, help="Preview or apply core plus named groups",
                                   epilog=f"Example: subsets {name} --creative-writing")
         sub.add_argument("--group", action="append", default=[], help="Group name; repeat to combine groups")
         sub.add_argument("--dry-run", action="store_true", help="Print a read-only plan")
-        sub.add_argument("--backend", choices=["auto", "subsets", "skilldeck", "existing"], default="auto",
+        sub.add_argument("--backend", choices=["auto", "subsets", "existing"], default="auto",
                          help="Choose an owner explicitly if names overlap")
     rollback = commands.add_parser("rollback", help="Restore one Subsets transaction, preserving later edits",
                                    epilog="Example: subsets rollback TRANSACTION_ID")

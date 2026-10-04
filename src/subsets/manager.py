@@ -129,7 +129,7 @@ class Manager:
             owner = {"version": 1, "store": str(self.store.path), "root": root.id}
             owner_op = payload_operation(marker, None, owner)
             data["roots"][root.id] = {**root.record(), "owner": "subsets", "baseline": baseline,
-                                      "protected": protected, "marker": owner_op["desired"], "markerName": marker.name}
+                                      "protected": protected, "marker": owner_op["desired"]}
             current = "current-" + root.id
             if current in data["groups"]:
                 raise DeckError("Adoption group name is already in use: " + current)
@@ -147,7 +147,7 @@ class Manager:
     def validate_root(self, root):
         path = Path(root["path"])
         safe_parents(path)
-        if snapshot(path / root.get("markerName", ".skilldeck-owner.json")) != root["marker"]:
+        if snapshot(path / ".subsets-owner.json") != root["marker"]:
             raise DeckError("Ownership marker changed: " + root["path"])
         if discovery.root_owner(path, self.home) not in {"unmanaged", "subsets", "subsets registry"}:
             raise DeckError("Another installer has claimed this folder: " + root["path"])

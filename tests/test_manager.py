@@ -250,26 +250,3 @@ def test_external_resource_links_are_not_copied(deck, tmp_path):
         manager.adopt(str(root))
     assert not manager.store.registry.exists()
     assert (root / "poetry/external.txt").is_symlink()
-
-
-def test_legacy_skilldeck_ownership_apply_and_rollback(deck):
-    manager, root, result = adopt(deck)
-    marker = root / ".subsets-owner.json"
-    marker.rename(root / ".skilldeck-owner.json")
-    data = manager.store.load()
-    record = data["roots"][result["root"]]
-    record.pop("markerName")
-    record["owner"] = "skilldeck"
-    from subsets.storage import save
-    save(manager.store.registry, data)
-    manager.edit_group("create", "writing", ["poetry"])
-    applied = manager.apply(["writing"])
-    assert not (root / "database").exists()
-    assert manager.verify()["verified"]
-    with manager.store.lock(allow_pending=True):
-        manager.store.rollback(applied["transaction"])
-    assert (root / "database").exists()
-    assert manager.verify()["verified"]
-    other = Manager(Store(manager.store.path.parent / "other"), home=manager.home, plugins=False)
-    with pytest.raises(DeckError, match="subsets registry"):
-        other.adopt(str(root))

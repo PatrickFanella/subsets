@@ -73,9 +73,8 @@ def root_owner(path: Path, home: Path) -> str:
     if any((parent / filename).is_file() for parent in [path, path.parent, path.parent.parent]
            for filename in ["skills-lock.json", ".skills-lock.json"]):
         return "external skill installer"
-    for marker in (".subsets-owner.json", ".skilldeck-owner.json"):
-        if (path / marker).exists() or (path / marker).is_symlink():
-            return "subsets registry"
+    if (path / ".subsets-owner.json").exists() or (path / ".subsets-owner.json").is_symlink():
+        return "subsets registry"
     return "unmanaged"
 
 

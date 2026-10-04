@@ -93,8 +93,6 @@ Subsets groups and existing backend profiles cannot be combined in one apply. Th
 
 Private state defaults to `$XDG_DATA_HOME/subsets`, or `~/.local/share/subsets`. Use `SUBSETS_HOME` or `--state PATH` for an isolated registry. It contains `registry.json`, the canonical `library/`, and journaled `transactions/` with verified before-state backups. The state directory has mode 0700; registries and journals have mode 0600. Keep this directory while recovery may be needed.
 
-Existing Skilldeck installations are supported: `SKILLDECK_HOME` remains a fallback, and the default uses an existing legacy registry in place when no Subsets registry exists. If both registries exist, select one with `--state`. Legacy ownership markers and recovery journals stay valid; `--backend skilldeck` remains an alias for `--backend subsets`.
-
 Apply preflights all registered paths before mutation, verifies copied resources and executable modes, and checks again before replacements. Drift stops application. An interrupted apply blocks later changes until its transaction is rolled back. Rollback preflights every affected path and refuses later edits, including group/registry edits. Undo newer transactions first when they changed the same registry. Unregistered skills and other root files are preserved.
 
 Subsets does not rewrite skill instructions or execute their scripts. Adoption is a filesystem ownership decision, not proof of tool compatibility, instruction quality, licensing, or actual agent behavior. Disk discovery also includes installed plugin versions that may be inactive; it is not the client's live skill catalog. Start a fresh client session after changing selection and verify its discovery separately.
