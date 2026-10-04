@@ -1,29 +1,39 @@
 # Subsets
 
-Subsets discovers agent skills on disk, helps organize named groups, and applies a selection through registered folder ownership or the existing codex-skills backend. Open the TUI with `subsets`; automate the same operations with its CLI.
+Subsets discovers agent skills on disk, helps organize named groups, and applies a selection through registered folder ownership or the existing codex-skills backend. The native npm edition uses TypeScript and Ink. Open the TUI with `subsets`; automate the same operations with its CLI.
 
-This first release runs on Linux and macOS with Python 3.11 or newer. It uses Textual for the interface and POSIX filesystem locks for changes. Windows is not supported by this release. The source repository is [subculture-collective/subsets](https://git.subcult.tv/subculture-collective/subsets). Package registry publication is not part of this release.
+This first release runs on Linux and macOS with Python 3.11 or newer. The Python edition uses Textual and POSIX filesystem locks. The native edition uses Ink and an exclusive directory lock. Windows is not supported by this release. The source repository is [subculture-collective/subsets](https://git.subcult.tv/subculture-collective/subsets). Package registry publication is not part of this release.
 
 ## Install and open
 
-Install from source:
+The native npm app requires Node.js 22 or newer. Configure the SUBCULT package scope once, then install the preview:
+
+```sh
+npm config set @subcult:registry https://git.subcult.tv/api/packages/subculture-collective/npm/
+npm install -g @subcult/subsets@alpha
+subsets
+```
+
+Try it without a global installation:
+
+```sh
+npx @subcult/subsets@alpha discover --json
+npx @subcult/subsets@alpha
+```
+
+The registry may require an account with package read access. See [npm installation and development](docs/npm.md) for authentication, local package testing, state ownership, and updates.
+
+The native standalone workflow requires no Python. The existing codex-skills adapter uses that installation’s Python 3 helpers; set `SUBSETS_PYTHON` to select its interpreter.
+
+The original Python implementation remains available during the port:
 
 ```sh
 uv tool install git+https://git.subcult.tv/subculture-collective/subsets.git
 ```
 
-For development, clone the repository and run from its root:
+Both installations provide a `subsets` command; choose which launcher is on your PATH. They have separate registries and cannot adopt a folder owned by the other installation.
 
-```sh
-uv tool install --editable .
-subsets
-subsets discover
-subsets discover --filter writing
-subsets roots
-subsets groups
-```
-
-For an isolated checkout without installation, use `uv run subsets` from the repository root. The TUI requires an interactive terminal. Every mutation also has a noninteractive CLI path; `--json` returns structured output.
+The TUI requires an interactive terminal. Every mutation also has a noninteractive CLI path, with JSON output for automation.
 
 ## Organize and apply
 
@@ -66,7 +76,8 @@ Imports do not activate a skill until a group containing it is applied. Create a
 
 ## TUI workflow
 
-- Search with Ctrl+F. Enter on a skill toggles it for group editing.
+- Native TUI: use 1–4 for Skills, Folders, Groups, and Recovery. `/` searches; Space picks a skill or toggles a group. `g` creates a group from picked skills, `a` adopts the selected folder, `p` previews, and `u` rolls back the selected transaction. Confirm with `y` or cancel with `n`. `r` rescans and `q` exits.
+- Python TUI: search with Ctrl+F. Enter on a skill toggles it for group editing.
 - In Folders, select a root and choose **Adopt folder**. The dialog explains the ownership change.
 - **Edit group** creates a group or adds/removes the picked skills. Eligible optional library skills edit canonical existing profiles; adopted skills edit Subsets groups.
 - Select groups in the sidebar, then **Preview** or Ctrl+P. The preview is checked again when you choose **Apply selection**.
@@ -91,7 +102,7 @@ Subsets groups and existing backend profiles cannot be combined in one apply. Th
 
 ## State and recovery
 
-Private state defaults to `$XDG_DATA_HOME/subsets`, or `~/.local/share/subsets`. Use `SUBSETS_HOME` or `--state PATH` for an isolated registry. It contains `registry.json`, the canonical `library/`, and journaled `transactions/` with verified before-state backups. The state directory has mode 0700; registries and journals have mode 0600. Keep this directory while recovery may be needed.
+Native state defaults to `$XDG_DATA_HOME/subsets/node`, or `~/.local/share/subsets/node`, with registry version 2. Python state uses `$XDG_DATA_HOME/subsets` and registry version 1. Use `SUBSETS_HOME` or `--state PATH` for an isolated registry. It contains `registry.json`, the canonical `library/`, and journaled `transactions/` with verified before-state backups. The state directory has mode 0700; registries and journals have mode 0600. Keep this directory while recovery may be needed.
 
 Apply preflights all registered paths before mutation, verifies copied resources and executable modes, and checks again before replacements. Drift stops application. An interrupted apply blocks later changes until its transaction is rolled back. Rollback preflights every affected path and refuses later edits, including group/registry edits. Undo newer transactions first when they changed the same registry. Unregistered skills and other root files are preserved.
 
@@ -102,6 +113,12 @@ See [discovery and ownership rules](docs/discovery-ownership.md) for the support
 ## Development
 
 ```sh
+npm ci
+npm test
+npm run format:check
+npm pack
+
+# Original Python implementation
 uv run --extra test pytest
 uv build
 ```
