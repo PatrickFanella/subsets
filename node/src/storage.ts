@@ -26,7 +26,8 @@ export function exists(p: string) {
     fs.lstatSync(p);
     return true;
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ENOTDIR") return false;
     throw e;
   }
 }

@@ -1,6 +1,22 @@
 # Native npm edition
 
-The npm package is `@subcult/subsets`; its command is `subsets`. The preview version is `0.2.0-alpha.2`. It runs the standalone workflow in Node.js 22 or newer without Python. Linux is locally tested; macOS remains unverified. Windows is not supported by this preview.
+The npm package is `@subcult/subsets`; its command is `subsets`. The preview version is `0.2.0-alpha.3`. It runs the standalone workflow in Node.js 22 or newer without Python. Linux is locally tested; macOS remains unverified. Windows is not supported by this preview.
+
+## Install from public npm
+
+```sh
+npm install -g @subcult/subsets@alpha
+subsets --version
+subsets
+```
+
+If you previously configured `@subcult` to use Gitea, switch that scope before installing or updating:
+
+```sh
+npm config set @subcult:registry https://registry.npmjs.org/
+```
+
+The patch fixes startup discovery when Codex's system skills contain installer marker files. Ordinary files and links to files are skipped without interrupting the rest of the inventory.
 
 ## Install from the hosted registry
 
@@ -50,12 +66,12 @@ Install the resulting tarball in a fresh directory outside the checkout and run 
 
 Use the configured agent’s package-write credentials through a private npm configuration. Inspect `npm pack --dry-run` first, qualify the exact tarball, then publish that tarball with `--tag alpha`. Keep version and command output aligned. Read back the registry metadata and install that exact version in a fresh directory after publishing.
 
-Publishing to npmjs.org and migrating Python registries are separate future steps.
+The public npm release and the hosted Gitea preview are separate registries. Neither migrates Python registries.
 
-## Public npm release preparation
+## Public npm publishing
 
-The branded alpha is prepared as `@subcult/subsets@0.2.0-alpha.2`. Its public npm configuration points to `https://registry.npmjs.org/`; the existing hosted preview remains a separate registry. Public npm availability must be confirmed after publication.
+The package's public npm configuration points to `https://registry.npmjs.org/`. Publish the qualified tarball with `--access public --tag alpha`, then confirm metadata and installation from that registry. Version `0.2.0-alpha.2` was the first public npm release.
 
 The publisher needs an npm account with control of the `@subcult` user or organization scope, verified email, and npm’s required publishing authentication. For an interactive first release, use `npm login --scope=@subcult --registry=https://registry.npmjs.org` on the publishing computer, then publish the qualified tarball with `--access public --tag alpha`. Respond to the browser/2FA prompts locally. Never put passwords, OTP codes, or tokens into the repository or chat. If the scope is unavailable, settle the package scope before publication.
 
-The exact candidate tarball, hashes, package contents, and qualification record are prepared before this step. Publishing is still pending until account authorization and registry readback succeed. See [npm scoped-public-package guidance](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/) and [npm publishing authentication requirements](https://docs.npmjs.com/requiring-2fa-for-package-publishing-and-settings-modification/).
+Prepare the exact candidate tarball, hashes, package contents, and qualification record before publication. Publication is complete only after account authorization and registry readback succeed. See [npm scoped-public-package guidance](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/) and [npm publishing authentication requirements](https://docs.npmjs.com/requiring-2fa-for-package-publishing-and-settings-modification/).
