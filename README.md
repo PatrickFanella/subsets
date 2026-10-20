@@ -49,6 +49,8 @@ Subsets is one of the tools we make at **[SUBCULT](https://subcult.tv)**. Explor
 
 The Personal Utility identity uses silver, charcoal, mint selections, and an original selected-tile mark. [Branding notes](docs/branding.md) describe the system and its Studio source.
 
+The [marketing packet](docs/marketing/README.md) contains product messaging, draft channel copy, a demo brief, and a 30-day campaign plan.
+
 ## Contribute
 
 Issues and pull requests live on [our Gitea repository](https://git.subcult.tv/subculture-collective/subsets). For local development:
