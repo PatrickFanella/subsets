@@ -1,0 +1,70 @@
+name: CI
+'on':
+  pull_request: {}
+  push:
+    branches:
+    - main
+permissions:
+  contents: read
+jobs:
+  node:
+    name: Node quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        lfs: true
+    - uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+    - name: Install locked Node dependencies
+      shell: bash
+      run: npm ci
+    - name: Run Node checks
+      shell: bash
+      run: |-
+        npm test
+        npm run typecheck
+        npm run format:check
+  python:
+    name: Python quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        lfs: true
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+      env:
+        AGENT_TOOLSDIRECTORY: ${{ runner.temp }}/python-tools-${{ github.run_id }}-${{ github.run_attempt }}-${{
+          github.job }}
+        RUNNER_TOOL_CACHE: ${{ runner.temp }}/python-tools-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job
+          }}
+    - name: Install uv and locked Python dependencies
+      shell: bash
+      run: |-
+        python3 -m pip install uv==0.13.6
+        uv sync --python "$(command -v python3)" --frozen --extra test
+    - name: Run Python tests
+      shell: bash
+      run: uv run --frozen --extra test python -m pytest
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+    - node
+    - python
+    steps:
+    - name: Require every quality job to succeed
+      shell: bash
+      run: |-
+        test "$NODE_RESULT" = success
+        test "$PYTHON_RESULT" = success
+      env:
+        NODE_RESULT: ${{ needs.node.result }}
+        PYTHON_RESULT: ${{ needs.python.result }}
