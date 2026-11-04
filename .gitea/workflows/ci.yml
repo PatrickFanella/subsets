@@ -13,13 +13,12 @@ jobs:
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v6
-    - name: Fetch LFS objects
-      # actions/checkout sends the job token as an extra Basic header on every
-      # request to this host; git-lfs adds the per-object Authorization header
-      # from the Gitea batch reply. Cloudflare rejects the doubled header with
-      # 400, so clear the extra header for LFS. The repository is public.
-      shell: bash
-      run: git -c "http.${{ github.server_url }}/.extraheader=" lfs pull
+      # Without stored credentials, git-lfs sends only the Authorization header from
+      # the Gitea batch reply. With them, actions/checkout adds a second one and
+      # Cloudflare answers 400. The repository is public and these jobs never push.
+      with:
+        lfs: true
+        persist-credentials: false
     - uses: actions/setup-node@v6
       with:
         node-version: '24'
@@ -38,13 +37,12 @@ jobs:
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v6
-    - name: Fetch LFS objects
-      # actions/checkout sends the job token as an extra Basic header on every
-      # request to this host; git-lfs adds the per-object Authorization header
-      # from the Gitea batch reply. Cloudflare rejects the doubled header with
-      # 400, so clear the extra header for LFS. The repository is public.
-      shell: bash
-      run: git -c "http.${{ github.server_url }}/.extraheader=" lfs pull
+      # Without stored credentials, git-lfs sends only the Authorization header from
+      # the Gitea batch reply. With them, actions/checkout adds a second one and
+      # Cloudflare answers 400. The repository is public and these jobs never push.
+      with:
+        lfs: true
+        persist-credentials: false
     - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
