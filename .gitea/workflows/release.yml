@@ -37,9 +37,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
+        # LFS objects are pulled in the next step. During checkout the action sends the
+        # job token as an extra header, git-lfs adds the batch reply's Authorization
+        # header, and Cloudflare answers the doubled header with 400.
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+          persist-credentials: false
+      - name: Fetch LFS objects
+        # Anonymous, so each download carries one Authorization header. Public repository.
+        shell: bash
+        run: git lfs install --local && git lfs pull
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -76,9 +83,16 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        # LFS objects are pulled in the next step. During checkout the action sends the
+        # job token as an extra header, git-lfs adds the batch reply's Authorization
+        # header, and Cloudflare answers the doubled header with 400.
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+          persist-credentials: false
+      - name: Fetch LFS objects
+        # Anonymous, so each download carries one Authorization header. Public repository.
+        shell: bash
+        run: git lfs install --local && git lfs pull
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -131,9 +145,16 @@ jobs:
       image: docker.gitea.com/runner-images:ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+        # LFS objects are pulled in the next step. During checkout the action sends the
+        # job token as an extra header, git-lfs adds the batch reply's Authorization
+        # header, and Cloudflare answers the doubled header with 400.
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+          persist-credentials: false
+      - name: Fetch LFS objects
+        # Anonymous, so each download carries one Authorization header. Public repository.
+        shell: bash
+        run: git lfs install --local && git lfs pull
       - name: Build the landing image
         shell: bash
         run: |
