@@ -74,6 +74,20 @@ subsets group add creative-writing TARGET_ROOT_ID:storytelling
 
 Imports do not activate a skill until a group containing it is applied. Create an empty supported destination such as `~/Project/.agents/skills`, register it with `root add PATH --owner unmanaged`, then adopt it. Source folders default to read-only when explicitly registered. For a one-off inspection, use `--root PATH` instead.
 
+## The patstack pack
+
+The first time the TUI opens, Subsets asks whether to add the patstack pack: 48 portable agent skills for development, review, debugging, research and writing, published as `@subcult/patstack`. Enter or `y` accepts, which is the default. Any other answer declines and is remembered.
+
+Accepting downloads the package with your own npm configuration and keeps it read-only under the Subsets state folder (`packs/patstack/VERSION/`). If you manage exactly one skill folder, its skills are imported there inactive and grouped as `patstack`; turn them on with `subsets apply --group patstack` alongside your other groups. A skill whose name you already have is left alone and reported as skipped. With no managed folder yet, the pack is registered read-only and Subsets tells you to adopt a folder and run `subsets pack add patstack` again; with several, pass `--to ROOT_ID`.
+
+```sh
+subsets pack list
+subsets pack add patstack [--to ROOT_ID]
+subsets pack remove patstack    # only while its skills are inactive
+```
+
+The prompt never appears in scripts or other commands, with `subsets --no-pack`, with `SUBSETS_NO_PACK=1`, or on hosts that use the existing codex-skills backend, which already provides these skills. Adding the pack again keeps imported copies; remove and add it to refresh them from a newer version. The Python edition does not offer packs.
+
 ## TUI workflow
 
 - Native TUI: use 1–4 for Skills, Folders, Groups, and Recovery. `/` searches; Space picks a skill or toggles a group. `g` creates a group from picked skills, `a` adopts the selected folder, `p` previews, and `u` rolls back the selected transaction. Confirm with `y` or cancel with `n`. `r` rescans and `q` exits.
@@ -89,8 +103,8 @@ Imports do not activate a skill until a group containing it is applied. Create a
 Subsets recognizes the canonical source behind `~/.agents/bin/skill-profile`. It displays eligible optional library skills and named profiles, excludes reserved/retired/blocked names, and sends selected profiles through `skill-profile` and `optional-clients.py`. It preserves the curated personal base, shared core, plugins, vault ownership and project installations.
 
 ```sh
-subsets apply --mobile --dry-run
-subsets apply --mobile
+subsets apply --frontend-mobile --dry-run
+subsets apply --frontend-mobile
 subsets group create creative-writing copywriting storytelling --backend existing
 ```
 

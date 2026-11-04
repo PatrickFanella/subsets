@@ -3,6 +3,7 @@ import { render, Box, Text, useInput, useApp, useStdout } from "ink";
 import { Manager } from "./manager.js";
 import { Legacy, backend, editGroup } from "./legacy.js";
 import type { Plan } from "./types.js";
+import * as packs from "./packs.js";
 const clean = (s: string) => s.replace(/[\x00-\x08\x0b-\x1f\x7f]/g, "");
 type Prompt =
   | { kind: "adopt"; ref: string }
@@ -335,7 +336,53 @@ export function SubsetsApp({
     </Box>
   );
 }
-export async function launch(manager: Manager, legacy?: Legacy) {
+// Before the first TUI session, offer the default patstack pack once. The
+// answer is recorded; nothing is downloaded or activated without a yes.
+async function offerPack(manager: Manager) {
+  const { createInterface } = await import("node:readline/promises"),
+    rl = createInterface({ input: process.stdin, output: process.stdout });
+  let answer: string;
+  try {
+    answer = (
+      await rl.question(
+        "Add the patstack pack? " +
+          packs.PACKS.patstack.summary +
+          ". They arrive inactive in a patstack group. [Y/n] ",
+      )
+    )
+      .trim()
+      .toLowerCase();
+  } finally {
+    rl.close();
+  }
+  if (answer && !["y", "yes"].includes(answer)) {
+    packs.decline(manager, "patstack");
+    console.log("Skipped. Add it later with: subsets pack add patstack");
+    return;
+  }
+  try {
+    const r = packs.add(manager, "patstack");
+    console.log(
+      `Added ${r.package}: ${r.imported.length} skills imported` +
+        (r.skipped.length ? `, ${r.skipped.length} already present` : "") +
+        ". " +
+        r.next,
+    );
+  } catch (e) {
+    console.log(
+      "Could not add the patstack pack: " +
+        (e instanceof Error ? e.message : String(e)) +
+        "\nTry again later with: subsets pack add patstack",
+    );
+  }
+}
+export async function launch(
+  manager: Manager,
+  legacy?: Legacy,
+  opts: { offerPack?: boolean } = {},
+) {
+  if (opts.offerPack !== false && packs.shouldOffer(manager, legacy))
+    await offerPack(manager);
   const app = render(<SubsetsApp manager={manager} legacy={legacy} />);
   await app.waitUntilExit();
 }

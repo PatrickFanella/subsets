@@ -3,13 +3,14 @@ import { Manager } from "./manager.js";
 import { Store } from "./storage.js";
 import { Legacy, backend, editGroup } from "./legacy.js";
 import { SubsetsError } from "./types.js";
-export const VERSION = "0.2.0-alpha.3";
+import * as packs from "./packs.js";
+export const VERSION = "0.2.0-alpha.4";
 const HELP = `subsets ${VERSION} — All your skills. Only the set you need.
 
 Usage: subsets [options] [command]
 
 Commands:
-  tui                         Interactive manager (default)
+  tui [--no-pack]             Interactive manager (default); the first run offers the patstack pack
   discover [--filter TEXT]    Discover local skill metadata
   roots | groups              List folders or groups
   root add PATH [--owner readonly|unmanaged]
@@ -18,6 +19,7 @@ Commands:
   group create|add|remove NAME [SKILL ...]
   plan|apply --group NAME [--group NAME ...]
   apply --creative-writing [--dry-run]
+  pack list | add NAME [--to ROOT_ID] | remove NAME
   verify | history | rollback TRANSACTION_ID
 
 Options (before or after command):
@@ -68,7 +70,7 @@ export async function main(argv = process.argv.slice(2)) {
           if (!value || value.startsWith("--"))
             throw new SubsetsError("Missing value for --" + key);
           (values[key] ??= []).push(value);
-        } else if (["json", "no-plugins", "dry-run"].includes(key))
+        } else if (["json", "no-plugins", "dry-run", "no-pack"].includes(key))
           flags.add(key);
         else extras.push(arg);
       } else positional.push(arg);
@@ -90,6 +92,7 @@ export async function main(argv = process.argv.slice(2)) {
       discover: ["filter"],
       root: ["owner"],
       import: ["to"],
+      pack: ["to"],
       group: ["backend"],
       plan: ["backend", "group"],
       apply: ["backend", "group"],
@@ -106,6 +109,8 @@ export async function main(argv = process.argv.slice(2)) {
       throw new SubsetsError(
         "--dry-run is supported by plan/apply; other mutations require their explicit command",
       );
+    if (flags.has("no-pack") && command !== "tui")
+      throw new SubsetsError("--no-pack applies to the TUI");
     if (extras.length && !["plan", "apply"].includes(command))
       throw new SubsetsError("Unknown option: " + extras[0]);
     const arity = (min: number, max = min) => {
@@ -126,7 +131,11 @@ export async function main(argv = process.argv.slice(2)) {
           throw new SubsetsError(
             "The TUI needs an interactive terminal. Use subsets discover --json",
           );
-        await (await import("./tui.js")).launch(manager, legacy);
+        await (
+          await import("./tui.js")
+        ).launch(manager, legacy, {
+          offerPack: !flags.has("no-pack"),
+        });
         return 0;
       case "discover":
       case "roots": {
@@ -244,6 +253,17 @@ export async function main(argv = process.argv.slice(2)) {
         }
         break;
       }
+      case "pack":
+        arity(1, 2);
+        if (positional[0] === "list") {
+          arity(1);
+          result = { packs: packs.list(manager) };
+        } else if (positional[0] === "add" && positional[1])
+          result = packs.add(manager, positional[1], { to: values.to?.[0] });
+        else if (positional[0] === "remove" && positional[1])
+          result = packs.remove(manager, positional[1]);
+        else throw new SubsetsError("Use pack list | add NAME | remove NAME");
+        break;
       case "verify":
         arity(0);
         result = manager.verify();
