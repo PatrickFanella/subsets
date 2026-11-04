@@ -1,0 +1,168 @@
+name: Release
+
+# A version tag (v0.2.0-alpha.4) verifies the tagged commit, packs it once,
+# publishes that tarball to the Gitea npm registry and public npm, attaches it
+# to a Gitea release, and deploys the landing page to Almaz. "Run workflow"
+# with an existing tag and publish off verifies, checks both registry
+# credentials and the Almaz key, and changes nothing. See docs/releases.md.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v0.2.0-alpha.4
+        required: true
+      publish:
+        description: Publish and deploy (off checks only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  PUBLISH: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          lfs: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Check the tag
+        shell: bash
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]] || { echo "Not a release tag: $TAG"; exit 1; }
+          version="$(node -p 'require("./package.json").version')"
+          [ "v$version" = "$TAG" ] || { echo "package.json is $version but the tag is $TAG"; exit 1; }
+      - name: Node checks
+        shell: bash
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+          npm run format:check
+          [ "$(node dist/cli.js --version)" = "${TAG#v}" ] || { echo "subsets --version does not match $TAG"; exit 1; }
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+        env:
+          AGENT_TOOLSDIRECTORY: ${{ runner.temp }}/python-tools-${{ github.run_id }}
+          RUNNER_TOOL_CACHE: ${{ runner.temp }}/python-tools-${{ github.run_id }}
+      - name: Python tests
+        shell: bash
+        run: |
+          python3 -m pip install uv==0.13.6
+          uv sync --python "$(command -v python3)" --frozen --extra test
+          uv run --frozen --extra test python -m pytest
+
+  npm:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          lfs: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Pack
+        shell: bash
+        run: |
+          npm ci
+          tarball="$(npm pack --json | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0))[0].filename)')"
+          sha256sum "$tarball" > "$tarball.sha256"
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+          cat "$tarball.sha256"
+      - name: Check registries
+        if: env.PUBLISH != 'true'
+        env:
+          GITEA_NPM_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bash scripts/npm-release.sh check "$TARBALL"
+      - name: Publish
+        if: env.PUBLISH == 'true'
+        env:
+          GITEA_NPM_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bash scripts/npm-release.sh publish "$TARBALL"
+      - name: Gitea release
+        if: env.PUBLISH == 'true'
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.GITEA_TOKEN }}
+          API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: token $TOKEN")
+          prerelease=false; [[ "$TAG" == *-* ]] && prerelease=true
+          id="$(curl -fsS "${auth[@]}" "$API/releases/tags/$TAG" | node -e 'try{process.stdout.write(String(JSON.parse(require("fs").readFileSync(0)).id))}catch{}' || true)"
+          if [ -z "$id" ]; then
+            id="$(curl -fsS "${auth[@]}" -H 'Content-Type: application/json' -X POST "$API/releases" \
+              -d "{\"tag_name\":\"$TAG\",\"name\":\"$TAG\",\"prerelease\":$prerelease,\"body\":\"npm: @subcult/subsets@${TAG#v}\"}" \
+              | node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(0)).id))')"
+          fi
+          for file in "$TARBALL" "$TARBALL.sha256"; do
+            curl -fsS "${auth[@]}" "$API/releases/$id/assets" | grep -q "\"name\":\"$file\"" && continue
+            curl -fsS "${auth[@]}" -X POST -F "attachment=@$file" "$API/releases/$id/assets?name=$file" >/dev/null
+          done
+
+  site:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: docker.gitea.com/runner-images:ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          lfs: true
+      - name: Build the landing image
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          echo "REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "IMAGE=subsets-landing:${REVISION:0:12}" >> "$GITHUB_ENV"
+          docker build --pull -f deploy/Dockerfile -t "subsets-landing:${REVISION:0:12}" \
+            --label "tv.subcult.source-revision=$REVISION" --label "tv.subcult.version=${TAG#v}" .
+      - name: Deploy to Almaz
+        shell: bash
+        env:
+          # One line of base64: Gitea masks a secret only where the printed
+          # text matches it exactly, which a multi-line key would not.
+          ALMAZ_DEPLOY_KEY_B64: ${{ secrets.ALMAZ_DEPLOY_KEY_B64 }}
+          ALMAZ_KNOWN_HOSTS: ${{ secrets.ALMAZ_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key="$RUNNER_TEMP/almaz-deploy-key" hosts="$RUNNER_TEMP/almaz-known-hosts"
+          trap 'rm -f "$key" "$hosts"' EXIT
+          printf '%s' "$ALMAZ_DEPLOY_KEY_B64" | base64 -d > "$key"
+          printf '%s\n' "$ALMAZ_KNOWN_HOSTS" > "$hosts"
+          almaz=(ssh -i "$key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$hosts" -o ServerAliveInterval=30 onnwee@10.0.0.200)
+          "${almaz[@]}" status
+          if [ "$PUBLISH" != true ]; then echo "Checks only: Almaz key works; nothing deployed"; exit 0; fi
+          docker save "$IMAGE" | "${almaz[@]}" receive "$REVISION"
+          "${almaz[@]}" deploy "$REVISION"
+      - name: Remove the local image
+        if: always()
+        shell: bash
+        run: docker image rm "$IMAGE" >/dev/null 2>&1 || true

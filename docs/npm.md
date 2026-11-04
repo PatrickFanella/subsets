@@ -1,6 +1,6 @@
 # Native npm edition
 
-The npm package is `@subcult/subsets`; its command is `subsets`. The preview version is `0.2.0-alpha.3`. It runs the standalone workflow in Node.js 22 or newer without Python. Linux is locally tested; macOS remains unverified. Windows is not supported by this preview.
+The npm package is `@subcult/subsets`; its command is `subsets`. The preview version is `0.2.0-alpha.4`. It runs the standalone workflow in Node.js 22 or newer without Python. Linux is locally tested; macOS remains unverified. Windows is not supported by this preview.
 
 ## Install from public npm
 
@@ -63,6 +63,8 @@ npm pack --pack-destination /tmp
 Install the resulting tarball in a fresh directory outside the checkout and run its installed `subsets` executable. Test adoption, group creation, dry-run, apply, idempotency, and rollback against disposable skill folders. The package includes compiled JavaScript and declarations; no install-time compilation or postinstall script runs.
 
 ## Publish a preview
+
+Releases are automated from version tags; see [releases.md](releases.md). The manual steps below remain the fallback.
 
 Use the configured agent’s package-write credentials through a private npm configuration. Inspect `npm pack --dry-run` first, qualify the exact tarball, then publish that tarball with `--tag alpha`. Keep version and command output aligned. Read back the registry metadata and install that exact version in a fresh directory after publishing.
 

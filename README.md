@@ -32,6 +32,8 @@ npm install -g @subcult/subsets@alpha
 subsets
 ```
 
+On the first interactive run Subsets offers the **patstack** pack, SUBCULT's 48 portable skills for development, review, debugging, research and writing. Yes is the default; the skills arrive inactive in a `patstack` group, and nothing is downloaded if you decline. Change your mind with `subsets pack add patstack` or `subsets pack remove patstack`.
+
 Linux is tested. macOS remains unverified; Windows is not supported by this preview. The standalone native workflow needs no Python. If you previously configured the `@subcult` scope for Gitea, set it to `https://registry.npmjs.org/` before installing or updating from public npm.
 
 [Installation and updates](docs/npm.md) · [Full workflow guide](docs/usage.md) · [Folder ownership and recovery](docs/discovery-ownership.md)
