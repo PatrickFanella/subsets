@@ -16,7 +16,7 @@ Open `http://127.0.0.1:18783/` for the landing page and `/brand.html` for the br
 
 ## Ownership and refresh
 
-Maintained branding lives in `subcult-tv/studio/branding/library/brands/subsets/`. The product owns this HTML, CSS, JavaScript, and the real TUI capture. Do not edit exported brand files independently. Run Studio's Subsets builder with `--export` pointing to `site/assets/brand`; its explicit selection is recorded in `brand-export.json` with SHA-256 hashes. Font licenses travel with the exports.
+Maintained branding lives in `subcult-tv/studio/branding/library/brands/subsets/`. The product owns this HTML, CSS, JavaScript, and the real TUI capture. Do not edit exported brand files independently. Run Studio's Subsets builder with `--export` pointing to `site/assets/brand`; its explicit selection is recorded in `brand-export.json` with SHA-256 hashes. Font licenses travel with the exports. `site/favicon.ico` and `site/apple-touch-icon.png` are rendered from the exported marks, not exported by Studio: the ICO holds `mark-mono.svg` at 16 pixels and `mark-primary.svg` at 32 and 48; the touch icon is `mark-primary.svg` at 180 pixels on silver `#d9dedc`. Re-render them if the marks change.
 
 Refresh the terminal captures from the product source:
 
