@@ -39,7 +39,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+      - name: Fetch LFS objects
+        # actions/checkout sends the job token as an extra Basic header on every
+        # request to this host; git-lfs adds the per-object Authorization header
+        # from the Gitea batch reply. Cloudflare rejects the doubled header with
+        # 400, so clear the extra header for LFS. The repository is public.
+        shell: bash
+        run: git -c "http.${{ github.server_url }}/.extraheader=" lfs pull
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -78,7 +84,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+      - name: Fetch LFS objects
+        # actions/checkout sends the job token as an extra Basic header on every
+        # request to this host; git-lfs adds the per-object Authorization header
+        # from the Gitea batch reply. Cloudflare rejects the doubled header with
+        # 400, so clear the extra header for LFS. The repository is public.
+        shell: bash
+        run: git -c "http.${{ github.server_url }}/.extraheader=" lfs pull
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -133,7 +145,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: refs/tags/${{ env.TAG }}
-          lfs: true
+      - name: Fetch LFS objects
+        # actions/checkout sends the job token as an extra Basic header on every
+        # request to this host; git-lfs adds the per-object Authorization header
+        # from the Gitea batch reply. Cloudflare rejects the doubled header with
+        # 400, so clear the extra header for LFS. The repository is public.
+        shell: bash
+        run: git -c "http.${{ github.server_url }}/.extraheader=" lfs pull
       - name: Build the landing image
         shell: bash
         run: |
