@@ -343,3 +343,12 @@ test("existing profile edits preserve comments and can be rolled back", async (t
     /storytelling/,
   );
 });
+
+test("CLI version agrees with the package artifact", () => {
+  const expected = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+  const result = spawnSync(process.execPath, [CLI, "--version"], {
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), expected);
+});
