@@ -13,6 +13,10 @@ for _attempt in {1..20}; do
   sleep 0.2
 done
 docker exec "$fixture" wget -q -T 2 -O - http://127.0.0.1:8080/ | grep -q Subsets
+brand_page=$(docker exec "$fixture" wget -q -T 2 -O - http://127.0.0.1:8080/brand.html)
+grep -q 'Personal Utility' <<< "$brand_page"
+grep -q 'href="https://subsets.subcult.tv/brand.html"' <<< "$brand_page"
+grep -q 'name="twitter:card" content="summary_large_image"' <<< "$brand_page"
 docker exec "$fixture" wget -q -T 2 -O /dev/null http://127.0.0.1:8080/favicon.ico
 docker exec "$fixture" wget -q -T 2 -O /dev/null http://127.0.0.1:8080/apple-touch-icon.png
 docker exec "$fixture" wget -q -T 2 -O /dev/null http://127.0.0.1:8080/assets/brand/social/og.png
