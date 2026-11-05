@@ -57,11 +57,12 @@ export class Legacy {
         ),
       ),
     );
+    const unified = exists(path.join(this.source, "catalog/skill-stacks.json"));
     for (const row of read<Array<{ name: string; scope?: string }>>(
       path.join(this.source, "catalog/proposed-catalog.json"),
       [],
     ))
-      if (row.scope !== "optional") reserved.add(row.name);
+      if (!unified && row.scope !== "optional") reserved.add(row.name);
     for (const name of Object.keys(
       read<Record<string, unknown>>(
         path.join(this.source, "catalog/local-owners.json"),
@@ -80,7 +81,7 @@ export class Legacy {
         reserved.add(path.basename(path.dirname(row.source)));
     for (const folder of [
       path.join(this.home, ".codex/skills/.system"),
-      path.join(this.source, "shared"),
+      ...(unified ? [] : [path.join(this.source, "shared")]),
     ])
       if (exists(folder))
         for (const n of fs.readdirSync(folder))
@@ -90,16 +91,19 @@ export class Legacy {
       { skills: {} },
     );
     for (const [name, row] of Object.entries(qualification.skills))
-      if (row.status === "blocked") reserved.add(name);
-    const roots = [
-        root(
-          path.join(this.source, "library/skills"),
-          "shared",
-          "optional",
-          "codex-skills source",
-        ),
-      ],
-      result = scan(roots);
+      if (["blocked", "archived", "unreviewed"].includes(row.status))
+        reserved.add(name);
+    const roots = (
+      unified ? ["skills", "shared", "library/skills"] : ["library/skills"]
+    ).map((folder) =>
+      root(
+        path.join(this.source, folder),
+        "shared",
+        "optional",
+        unified ? "subsets stacks" : "codex-skills source",
+      ),
+    );
+    const result = scan(roots);
     return {
       roots,
       skills: result.skills.filter((s) => !reserved.has(s.name)),
@@ -108,7 +112,10 @@ export class Legacy {
   }
   editGroup(store: Store, action: string, name: string, refs: string[]) {
     groupName(name);
-    if (name === "core")
+    if (
+      name === "core" &&
+      !exists(path.join(this.source, "catalog/skill-stacks.json"))
+    )
       throw new SubsetsError("The existing core retains its canonical owners");
     const selected = new Set<string>();
     for (const ref of refs) {
@@ -143,7 +150,9 @@ export class Legacy {
       return {
         group: name,
         members: [...members].sort(),
-        backend: "codex-skills",
+        backend: exists(path.join(this.source, "catalog/skill-stacks.json"))
+          ? "subsets-stacks"
+          : "codex-skills",
         source: p,
         transaction: store.transaction(
           [textOperation(p, before, payload, before?.mode ?? 0o644)],
@@ -184,7 +193,9 @@ export class Legacy {
     const names = groups.filter((n) => n !== "core"),
       flags = names.flatMap((n) => ["--profile", n]);
     return {
-      backend: "codex-skills",
+      backend: exists(path.join(this.source, "catalog/skill-stacks.json"))
+        ? "subsets-stacks"
+        : "codex-skills",
       source: this.source,
       groups: groups.length ? groups : ["core"],
       codex: JSON.parse(
@@ -212,7 +223,9 @@ export class Legacy {
           this.command("optional-clients.py", ["verify", ...flags]),
         ) as unknown;
       return {
-        backend: "codex-skills",
+        backend: exists(path.join(this.source, "catalog/skill-stacks.json"))
+          ? "subsets-stacks"
+          : "codex-skills",
         codex,
         claudeReceipt,
         claudeVerification,

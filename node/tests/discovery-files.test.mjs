@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { exists } from "../../dist/storage.js";
-import { root, scan } from "../../dist/discovery.js";
+import { root, roots, scan } from "../../dist/discovery.js";
 import { Legacy } from "../../dist/legacy.js";
 
 function fixture(t) {
@@ -76,4 +76,99 @@ test("existing profiles ignore marker files and still reserve owned skills", (t)
     ["optional-tool"],
   );
   assert.deepEqual(result.warnings, []);
+});
+
+test("unified stack discovery covers Cursor/Copilot and preserves package owners", (t) => {
+  const home = fixture(t);
+  delete process.env.CODEX_HOME;
+  delete process.env.XDG_CONFIG_HOME;
+  const clientRoots = [
+    ".agents/skills",
+    ".codex/skills",
+    ".claude/skills",
+    ".copilot/skills",
+    ".cursor/skills",
+    ".config/opencode/skills",
+  ];
+  const state = path.join(home, ".local/state/subsets-fleet/profiles");
+  fs.mkdirSync(state, { recursive: true });
+  const registered = {};
+  for (const relative of clientRoots) {
+    const p = path.join(home, relative);
+    skill(p, "managed-tool");
+    registered[path.join(p, "managed-tool")] = { type: "directory" };
+  }
+  const mappings = Object.fromEntries(
+    clientRoots.map((p) => [p, path.join(home, p)]),
+  );
+  fs.writeFileSync(
+    path.join(state, "ownership.json"),
+    JSON.stringify({ owner: "subsets", roots: mappings }),
+  );
+  fs.writeFileSync(
+    path.join(state, "installed.json"),
+    JSON.stringify({ paths: registered }),
+  );
+  const app = path.join(home, ".claude/plugins/cache/example/skills");
+  skill(app, "app-tool");
+  fs.symlinkSync(
+    path.join(app, "app-tool"),
+    path.join(home, ".copilot/skills/app-tool"),
+  );
+  const found = scan(roots(home, undefined, [], false)).skills;
+  assert.ok(
+    found.some((s) => s.client === "cursor" && s.owner === "subsets stacks"),
+  );
+  assert.ok(
+    found.some(
+      (s) =>
+        s.client === "copilot" &&
+        s.name === "managed-tool" &&
+        s.owner === "subsets stacks",
+    ),
+  );
+  assert.equal(
+    found.find((s) => s.client === "copilot" && s.name === "app-tool").owner,
+    "package",
+  );
+  assert.equal(
+    found.find((s) => s.client === "opencode").owner,
+    "subsets stacks",
+  );
+});
+
+test("unified inventory includes personal/shared sources and filters retired and local entries", (t) => {
+  const dir = fixture(t),
+    source = path.join(dir, "source");
+  for (const [folder, name] of [
+    ["skills", "personal-tool"],
+    ["shared", "shared-tool"],
+    ["library/skills", "optional-tool"],
+    ["library/skills", "old-tool"],
+    ["library/skills", "vault-tool"],
+  ])
+    skill(path.join(source, folder), name);
+  fs.mkdirSync(path.join(source, "catalog"), { recursive: true });
+  fs.writeFileSync(path.join(source, "catalog/skill-stacks.json"), "{}");
+  fs.writeFileSync(
+    path.join(source, "catalog/proposed-catalog.json"),
+    JSON.stringify([
+      { name: "personal-tool", scope: "personal" },
+      { name: "shared-tool", scope: "shared" },
+    ]),
+  );
+  fs.writeFileSync(
+    path.join(source, "catalog/retired-names.json"),
+    JSON.stringify({ "old-tool": {} }),
+  );
+  fs.writeFileSync(
+    path.join(source, "catalog/local-owners.json"),
+    JSON.stringify({ "vault-tool": {} }),
+  );
+  const found = new Legacy(source, path.join(dir, "home")).inventory().skills;
+  assert.deepEqual(found.map((s) => s.name).sort(), [
+    "optional-tool",
+    "personal-tool",
+    "shared-tool",
+  ]);
 });

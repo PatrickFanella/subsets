@@ -31,7 +31,14 @@ export function pathOwner(p: string) {
     return "package";
   if (exists(p)) {
     const resolved = fs.realpathSync(p);
-    if (["/usr/", "/opt/", "/nix/"].some((s) => resolved.startsWith(s)))
+    if (
+      resolved
+        .split(path.sep)
+        .some((n) =>
+          [".system", "plugins", "node_modules", "site-packages"].includes(n),
+        ) ||
+      ["/usr/", "/opt/", "/nix/"].some((s) => resolved.startsWith(s))
+    )
       return "package";
     if (fs.lstatSync(p).isSymbolicLink()) return "linked source";
   }
@@ -48,6 +55,18 @@ export function rootOwner(p: string, home: string) {
     )
       return "codex-skills source";
     parent = path.dirname(parent);
+  }
+  const takeover = path.join(
+    home,
+    ".local/state/subsets-fleet/profiles/ownership.json",
+  );
+  if (exists(takeover)) {
+    const data = JSON.parse(fs.readFileSync(takeover, "utf8")) as {
+      owner?: string;
+      roots?: Record<string, string>;
+    };
+    if (data.owner === "subsets" && Object.values(data.roots ?? {}).includes(p))
+      return "subsets stacks";
   }
   const codex = absolute(process.env.CODEX_HOME ?? path.join(home, ".codex"));
   if (exists(path.join(p, "../../.agent-skills.json")))
@@ -99,6 +118,8 @@ export function roots(
     [path.join(codex, "skills"), "codex", "user"],
     [path.join(home, ".agents/skills"), "shared", "user"],
     [path.join(home, ".claude/skills"), "claude", "user"],
+    [path.join(home, ".copilot/skills"), "copilot", "user"],
+    [path.join(home, ".cursor/skills"), "cursor", "user"],
     [path.join(xdg, "opencode/skills"), "opencode", "user"],
     [path.join(home, ".opencode/skills"), "opencode", "user"],
   ];
@@ -112,6 +133,9 @@ export function roots(
         [".agents", "shared"],
         [".codex", "codex"],
         [".claude", "claude"],
+        [".github", "copilot"],
+        [".copilot", "copilot"],
+        [".cursor", "cursor"],
         [".opencode", "opencode"],
       ])
         candidates.push([path.join(p, folder, "skills"), client, "project"]);
@@ -145,8 +169,15 @@ export function roots(
   }
   const found = new Map<string, Root>();
   for (const [p, client, scope] of candidates)
-    if (directory(p) && !found.has(p))
-      found.set(p, root(p, client, scope, rootOwner(p, home)));
+    if (directory(p) && !found.has(p)) {
+      const row = root(p, client, scope, rootOwner(p, home));
+      if (row.owner === "subsets stacks")
+        row.ownershipReceipt = path.join(
+          home,
+          ".local/state/subsets-fleet/profiles/installed.json",
+        );
+      found.set(p, row);
+    }
   return [...found.values()];
 }
 export function inspect(p: string, r: Root, expectedName?: string): Skill {
@@ -182,6 +213,21 @@ export function inspect(p: string, r: Root, expectedName?: string): Skill {
     issue = e instanceof Error ? e.message : String(e);
     name = folder;
   }
+  let owner = r.owner === "unmanaged" ? pathOwner(p) : r.owner;
+  if (r.owner === "subsets stacks") {
+    // Root ownership is not adoption of package links or unrelated local skills.
+    const receipt = r.ownershipReceipt;
+    const recorded =
+      receipt && exists(receipt)
+        ? JSON.parse(fs.readFileSync(receipt, "utf8")).paths
+        : {};
+    owner =
+      pathOwner(p) === "package"
+        ? "package"
+        : recorded[p]
+          ? "subsets stacks"
+          : pathOwner(p);
+  }
   return {
     id: r.id + ":" + folder,
     name,
@@ -190,7 +236,7 @@ export function inspect(p: string, r: Root, expectedName?: string): Skill {
     root: r.path,
     client: r.client,
     scope: r.scope,
-    owner: r.owner === "unmanaged" ? pathOwner(p) : r.owner,
+    owner,
     issue,
   };
 }
