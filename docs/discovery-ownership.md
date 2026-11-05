@@ -8,10 +8,11 @@ These rules define where Subsets looks and which changes it may make. Discovery 
 |---|---|
 | `$CODEX_HOME/skills`, otherwise `~/.codex/skills` | User installation; known installer receipts retain their owner. |
 | `~/.agents/skills` | Shared installation; an existing profile manager retains its owner. |
+| `~/.copilot/skills` and `~/.cursor/skills` | Personal client skills; preserve app/package links and recorded Subsets stack ownership. |
 | `~/.claude/skills` | Claude user skills; links and known source-link installers retain their owners. |
 | `$XDG_CONFIG_HOME/opencode/skills`, otherwise `~/.config/opencode/skills` | OpenCode user skills. |
 | `~/.opencode/skills` | Additional OpenCode-compatible location; client discovery should be checked separately. |
-| `.agents/skills`, `.codex/skills`, `.claude/skills`, `.opencode/skills` in the explicit project and its ancestors | Project-local scope. Stop at home/root; do not recurse into sibling repositories or worktrees. |
+| `.agents/skills`, `.codex/skills`, `.claude/skills`, `.github/skills`, `.copilot/skills`, `.cursor/skills`, `.opencode/skills` in the explicit project and its ancestors | Project-local scope. Stop at home/root; do not recurse into sibling repositories or worktrees. |
 | Codex `skills/.system` | System-owned metadata only. |
 | Codex `plugins/cache/*/*/*/skills` and `*/*/skills` | Bounded plugin-layout metadata only, including retained versions. |
 | Explicit `--root PATH` and remembered `root add PATH` entries | Only the named directory's immediate skill children. Remembered entries default to read-only. |
@@ -36,6 +37,27 @@ Root-qualified IDs distinguish same-name skills across clients and scopes. Linki
 9. Recovery checks all touched paths before restoration and preserves later edits. Missing or changed ownership markers are errors. Adoption rollback releases ownership by restoring the marker and registry before-state; undo later related transactions first.
 
 Unknown third-party installers cannot all be inferred from a folder layout. Review the displayed owner before adopting a root; declare uncertain folders read-only. The first release does not automatically migrate another manager's registry, rewrite source repositories, install remote skills, or decide which instructions are safe or useful.
+
+## Unified task stacks
+
+A patstack backend with `catalog/skill-stacks.json` supplies one selection across
+curated, shared and qualified specialist sources. Its core is the complete
+everyday set; task sets combine disciplines and can overlap. Inventory exposes
+all three source trees instead of treating curated skills as outside Subsets.
+The unified backend also supports editing core membership.
+
+The backend's `ownership.json` and `installed.json` receipts identify managed
+client views. Individual package links retain package ownership, even inside a
+managed user root. Unknown entries are not implicitly adopted. The first
+transfer requires matching predecessor receipts, verified originals, release
+of the old path records and recoverable transaction state. The standalone
+`adopt` command still cannot override another installer or package owner.
+
+This is file/selection support. Cursor and Copilot location rules come from
+[Cursor skills](https://cursor.com/help/customization/skills) and
+[Copilot skills](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills).
+Shared lookup compatibility is not evidence of tool or invocation equivalence.
+App-specific and repository/vault-local skills stay with their existing owners.
 
 ## Adding clients or backends
 

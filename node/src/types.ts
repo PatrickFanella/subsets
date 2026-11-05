@@ -9,6 +9,7 @@ export interface Root {
   client: string;
   scope: string;
   owner: string;
+  ownershipReceipt?: string;
 }
 export interface Skill {
   id: string;
