@@ -4,7 +4,7 @@ import { Store } from "./storage.js";
 import { Legacy, backend, editGroup } from "./legacy.js";
 import { SubsetsError } from "./types.js";
 import * as packs from "./packs.js";
-export const VERSION = "0.2.0-alpha.5";
+export const VERSION = "0.2.0-alpha.6";
 const HELP = `subsets ${VERSION} — All your skills. Only the set you need.
 
 Usage: subsets [options] [command]

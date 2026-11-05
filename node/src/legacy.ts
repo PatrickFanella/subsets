@@ -168,14 +168,23 @@ export class Legacy {
       {
         cwd: this.source,
         encoding: "utf8",
-        timeout: 120000,
+        // A write may have thousands of durably journaled operations. Killing
+        // it on a read timeout leaves a partial transaction requiring recovery.
+        timeout: ["activate", "deactivate", "apply", "rollback"].includes(
+          args[0],
+        )
+          ? 0
+          : 120000,
         maxBuffer: 16 * 1024 * 1024,
       },
     );
     if (result.error)
       throw new SubsetsError(
-        "Existing backend needs Python 3 and its dependencies; inspect its receipts before retrying: " +
-          result.error.message,
+        "code" in result.error && result.error.code === "ETIMEDOUT"
+          ? "Existing backend read timed out; inspect its receipts before retrying: " +
+              result.error.message
+          : "Existing backend needs Python 3 and its dependencies; inspect its receipts before retrying: " +
+              result.error.message,
       );
     if (result.status !== 0)
       throw new SubsetsError(

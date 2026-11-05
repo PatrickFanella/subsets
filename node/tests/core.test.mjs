@@ -4,12 +4,36 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { spawnSync } from "node:child_process";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
 import { Manager } from "../../dist/manager.js";
 import { Store, snapshot, equal, save } from "../../dist/storage.js";
 import { roots, root, scan } from "../../dist/discovery.js";
 delete process.env.CODEX_HOME;
 delete process.env.XDG_CONFIG_HOME;
 const CLI = path.resolve("dist/cli.js");
+test("backend writes keep their journal alive beyond the read timeout", async (t) => {
+  const { Legacy } = await import("../../dist/legacy.js");
+  const calls = [];
+  t.mock.method(childProcess, "spawnSync", (_exe, args, options) => {
+    calls.push({ args, timeout: options.timeout });
+    return { status: 0, stdout: "{}", stderr: "" };
+  });
+  syncBuiltinESMExports();
+  t.after(() => {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
+  });
+  const backend = new Legacy(os.tmpdir(), os.tmpdir());
+  for (const command of ["activate", "deactivate", "apply", "rollback"])
+    backend.command("skill-profile", [command]);
+  backend.command("optional-clients.py", ["apply"]);
+  backend.command("skill-profile", ["plan", "writing"]);
+  assert.deepEqual(
+    calls.map((c) => c.timeout),
+    [0, 0, 0, 0, 0, 120000],
+  );
+});
 function skill(root, name) {
   const p = path.join(root, name);
   fs.mkdirSync(p, { recursive: true });
