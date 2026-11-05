@@ -61,7 +61,8 @@ The automatic main lane uses `receive-main REVISION` and `deploy-main REVISION`.
 They use the full revision image namespace and require the current repository
 `main` before receipt and immediately before activation. Older queued CI runs
 refuse deployment. Tagged `receive`/`deploy` operations continue to support
-deliberate historical releases and rollback. All modes share the same host lock.
+deliberate historical releases and rollback. All modes share the same host lock,
+waiting up to five minutes for another landing operation to finish.
 Main retries always verify readiness and public HTML, including when the image
 name already matches. Receipts retain the previous immutable image ID so a
 retagged candidate cannot replace its own rollback image.
@@ -88,3 +89,6 @@ npm versions are immutable: publish a fixed version, or move the dist-tag back
 with `npm dist-tag add @subcult/subsets@PREVIOUS alpha`. For the site, rerun
 the release workflow for the previous tag with publish on; its image is rebuilt
 and deployed, and the receipt names the image it replaced.
+
+Finish or cancel pending main landing runs before deliberately restoring an
+older tagged site. A later verified main push deploys the landing page again.

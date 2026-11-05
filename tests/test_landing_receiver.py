@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 
 import pytest
@@ -33,11 +34,14 @@ def receiver(tmp_path):
     script.write_text(source)
     log = tmp_path / "docker.log"
     (binaries / "git").write_text(
-        '#!/bin/sh\nprintf "%s\\trefs/heads/main\\n" "$RECEIVER_TEST_MAIN"\n'
+        '#!/bin/sh\n'
+        'if [ -e "$RECEIVER_TEST_CHANGED" ]; then revision="$RECEIVER_TEST_NEW_MAIN"; else revision="$RECEIVER_TEST_MAIN"; fi\n'
+        'printf "%s\\trefs/heads/main\\n" "$revision"\n'
     )
     (binaries / "docker").write_text(
         '#!/bin/sh\nprintf "%s\\n" "$*" >> "$RECEIVER_TEST_LOG"\n'
         'if [ "$1 $2" = "image inspect" ]; then printf "%s\\n" "$RECEIVER_TEST_LABEL"; fi\n'
+        'if [ "$1 $2" = "image inspect" ] && [ "$RECEIVER_TEST_ADVANCE" = true ]; then printf changed > "$RECEIVER_TEST_CHANGED"; fi\n'
         'if [ "$1" = inspect ]; then\n'
         '  case "$3" in\n'
         '    *Config.Image*) printf "%s\\n" "$RECEIVER_TEST_RUNNING" ;;\n'
@@ -50,10 +54,16 @@ def receiver(tmp_path):
     )
     (binaries / "curl").write_text("#!/bin/sh\nprintf unexpected-html\n")
     (binaries / "sleep").write_text("#!/bin/sh\nexit 0\n")
+    # Exercise the real kernel lock with a short timeout in fixtures.
+    flock = shlex.quote(shutil.which("flock"))
+    (binaries / "flock").write_text(
+        '#!/bin/sh\nif [ "$1" = -w ]; then shift; shift; '
+        f'exec {flock} -w 0.1 "$@"; else exec {flock} "$@"; fi\n'
+    )
     for binary in binaries.iterdir():
         binary.chmod(0o700)
 
-    def run(command, label=CURRENT):
+    def run(command, label=CURRENT, advance_main=False):
         env = {
             **os.environ,
             "PATH": str(binaries) + os.pathsep + os.environ["PATH"],
@@ -63,6 +73,9 @@ def receiver(tmp_path):
             "RECEIVER_TEST_LOG": str(log),
             "RECEIVER_TEST_RUNNING": "subsets-landing-main:" + CURRENT,
             "RECEIVER_TEST_PREVIOUS_ID": "sha256:" + "c" * 64,
+            "RECEIVER_TEST_CHANGED": str(tmp_path / "main-changed"),
+            "RECEIVER_TEST_NEW_MAIN": OLD,
+            "RECEIVER_TEST_ADVANCE": str(advance_main).lower(),
         }
         result = subprocess.run(
             ["bash", str(script)], input=b"", capture_output=True, env=env, timeout=5
@@ -121,6 +134,14 @@ def test_main_retry_verifies_and_rolls_back_by_image_id(receiver):
     ]
     receipt = json.loads((releases / CURRENT[:12] / "receipt.json").read_text())
     assert receipt["previousImageId"] == "sha256:" + "c" * 64
+
+
+def test_main_change_during_preparation_neither_activates_nor_rolls_back(receiver):
+    run, _ = receiver
+    result, calls = run("deploy-main " + CURRENT, advance_main=True)
+    assert result.returncode != 0
+    assert b"not current main" in result.stderr
+    assert not any(line.startswith("compose-image=") for line in calls)
 
 
 @pytest.mark.parametrize("command", ["status extra", "receive-main main", "receive-main " + CURRENT + " extra"])

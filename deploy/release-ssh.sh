@@ -30,7 +30,7 @@ require_current_main() {
 }
 mkdir -p "$releases"
 exec 9>"$releases/.deploy.lock"
-flock -n 9 || { echo "Another Subsets landing operation is active" >&2; exit 1; }
+flock -w 300 9 || { echo "Another Subsets landing operation is active" >&2; exit 1; }
 running() { docker inspect -f '{{.Config.Image}}' subsets-landing 2>/dev/null || true; }
 label() { docker image inspect -f '{{index .Config.Labels "tv.subcult.source-revision"}}' "$1"; }
 up() { SUBSETS_IMAGE="$1" SUBSETS_REVISION="$2" docker compose -p subsets -f "$tools/compose.yml" up -d --wait --wait-timeout 60 subsets-landing; }
