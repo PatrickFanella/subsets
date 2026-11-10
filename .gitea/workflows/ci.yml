@@ -1,7 +1,9 @@
 name: CI
+# Pull requests are verified by .github/workflows/mirror-ci.yml on the GitHub
+# mirror, reported back here as "GitHub CI / Mirror CI gate". This workflow
+# verifies and deploys main after merge.
 'on':
   workflow_dispatch: {}
-  pull_request: {}
   push:
     branches:
     - main
@@ -10,7 +12,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Runs end in a deployment, so a newer main push waits instead of cancelling.
+  cancel-in-progress: false
 
 jobs:
   node:
