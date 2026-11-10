@@ -1,7 +1,7 @@
 name: CI
 # Pull requests are verified by .github/workflows/mirror-ci.yml on the GitHub
 # mirror, reported back here as "GitHub CI / Mirror CI gate". This workflow
-# verifies and deploys main after merge.
+# verifies main after merge; GitHub deploys it (.github/workflows/deploy.yml).
 'on':
   workflow_dispatch: {}
   push:
@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # Runs end in a deployment, so a newer main push waits instead of cancelling.
+  # A newer main push waits instead of cancelling.
   cancel-in-progress: false
 
 jobs:
@@ -91,66 +91,3 @@ jobs:
       env:
         NODE_RESULT: ${{ needs.node.result }}
         PYTHON_RESULT: ${{ needs.python.result }}
-
-  landing:
-    name: Landing image and main deployment
-    needs: verify
-    # Homelab deploy keys accept only Kvant's address (Kvant and its Kuznya VM); the kvant label keeps this job off Buran.
-    runs-on: [ubuntu-latest, kvant]
-    timeout-minutes: 20
-    env:
-      REVISION: ${{ github.sha }}
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        ref: ${{ github.sha }}
-        persist-credentials: false
-    - name: Fetch landing LFS assets
-      run: git lfs install --local && git lfs pull
-    - name: Build and check the landing image
-      shell: bash
-      run: |
-        set -euo pipefail
-        test "$(git rev-parse HEAD)" = "$REVISION"
-        image="subsets-landing-main:$REVISION"
-        docker build -f deploy/Dockerfile -t "$image" \
-          --label "tv.subcult.source-revision=$REVISION" \
-          --label "tv.subcult.deployment.channel=main" \
-          --label "org.opencontainers.image.revision=$REVISION" \
-          --label "org.opencontainers.image.source=https://git.subcult.tv/subculture-collective/subsets" .
-        bash deploy/check-landing-image.sh "$image"
-    - name: Deploy verified main through the existing landing receiver
-      if: >-
-        github.server_url == 'https://git.subcult.tv' &&
-        github.ref == 'refs/heads/main' &&
-        (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-      shell: bash
-      env:
-        ALMAZ_DEPLOY_KEY_B64: ${{ secrets.ALMAZ_DEPLOY_KEY_B64 }}
-        ALMAZ_KNOWN_HOSTS: ${{ secrets.ALMAZ_KNOWN_HOSTS }}
-      run: |
-        set -euo pipefail
-        test -n "$ALMAZ_DEPLOY_KEY_B64"
-        test -n "$ALMAZ_KNOWN_HOSTS"
-        umask 077
-        deploy_dir=$(mktemp -d)
-        trap 'rm -rf "$deploy_dir"' EXIT
-        printf '%s' "$ALMAZ_DEPLOY_KEY_B64" | base64 -d > "$deploy_dir/key"
-        printf '%s\n' "$ALMAZ_KNOWN_HOSTS" > "$deploy_dir/known_hosts"
-        unset ALMAZ_DEPLOY_KEY_B64 ALMAZ_KNOWN_HOSTS
-        almaz=(ssh -F /dev/null -o ControlPath=none -o ControlMaster=no
-          -i "$deploy_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes
-          -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$deploy_dir/known_hosts"
-          -o ConnectTimeout=15 onnwee@10.0.0.200)
-        image="subsets-landing-main:$REVISION"
-        "${almaz[@]}" status
-        # shellcheck disable=SC2029
-        docker save "$image" | "${almaz[@]}" "receive-main $REVISION"
-        # shellcheck disable=SC2029
-        "${almaz[@]}" "deploy-main $REVISION"
-        expected=$(docker run --rm --network none --read-only --entrypoint cat "$image" /usr/share/nginx/html/index.html | sha256sum | cut -d' ' -f1)
-        curl --fail --silent --show-error --retry 4 --retry-all-errors \
-          --max-time 30 https://subsets.subcult.tv/ > "$deploy_dir/live.html"
-        actual=$(sha256sum "$deploy_dir/live.html" | cut -d' ' -f1)
-        test "$actual" = "$expected"
-        printf 'Public landing HTML matches source %s\n' "$REVISION"
