@@ -139,7 +139,8 @@ jobs:
 
   site:
     needs: verify
-    runs-on: ubuntu-24.04
+    # Homelab deploy keys accept only Kvant's address (Kvant and its Kuznya VM); the kvant label keeps this job off Buran.
+    runs-on: [ubuntu-24.04, kvant]
     timeout-minutes: 20
     container:
       image: docker.gitea.com/runner-images:ubuntu-24.04
