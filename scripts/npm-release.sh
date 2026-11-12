@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Publish one packed tarball to the Gitea npm registry and public npm.
 # Usage: npm-release.sh check|publish TARBALL
-# NPM_TOKEN is required. Without GITEA_NPM_TOKEN the Gitea registry is skipped.
+# Public npm uses NPM_TOKEN when set. Without it, the script must run in a GitHub
+# Actions job with id-token: write, and npm publishes through trusted publishing
+# (OIDC). Without GITEA_NPM_TOKEN the Gitea registry is skipped.
 # Tokens reach npm through an npmrc that names the environment variables,
 # so they never appear on a command line or in the log.
 set -euo pipefail
@@ -16,7 +18,8 @@ rc="${RUNNER_TEMP:-/tmp}/release-npmrc"
 umask 077
 {
   echo "//git.subcult.tv/api/packages/subculture-collective/npm/:_authToken=\${GITEA_NPM_TOKEN}"
-  echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}"
+  # An empty token line would shadow the OIDC token npm fetches itself.
+  [ -z "${NPM_TOKEN:-}" ] || echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}"
 } > "$rc"
 export NPM_CONFIG_USERCONFIG="$rc" NPM_TOKEN="${NPM_TOKEN:-}" GITEA_NPM_TOKEN="${GITEA_NPM_TOKEN:-}"
 trap 'rm -f "$rc"' EXIT
@@ -28,12 +31,19 @@ for registry in "$gitea" "$public"; do
   if [ "$label" = gitea ] && [ -z "$GITEA_NPM_TOKEN" ]; then
     echo "gitea: GITEA_NPM_TOKEN is not set; skipping the Gitea registry"; continue
   fi
+  oidc=false
   if [ "$label" = npm ] && [ -z "$NPM_TOKEN" ]; then
-    echo "::error::NPM_TOKEN is not set; public npm cannot be published"; exit 1
+    if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+      echo "::error::Set NPM_TOKEN, or run in GitHub Actions with id-token: write for trusted publishing"; exit 1
+    fi
+    oidc=true
   fi
   if [ "$mode" = check ]; then
-    who="$(npm whoami --registry "$registry")"
-    echo "$label: authenticated as $who"
+    if [ "$oidc" = true ]; then
+      echo "$label: trusted publishing (OIDC); npm checks the publisher at publish time"
+    else
+      echo "$label: authenticated as $(npm whoami --registry "$registry")"
+    fi
     published "$registry" && echo "$label: $name@$version already published" || echo "$label: $name@$version not yet published"
     continue
   fi

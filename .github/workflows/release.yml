@@ -2,7 +2,8 @@ name: Release
 run-name: Release ${{ github.event.inputs.tag || github.ref_name }}
 
 # A version tag (v0.2.0-alpha.7) verifies the tagged commit, packs it once,
-# publishes that tarball to public npm and attaches it to a GitHub release.
+# publishes that tarball to public npm through trusted publishing and attaches
+# it to a GitHub release.
 # The Gitea registry is published too when the GITEA_NPM_TOKEN secret is set.
 # The landing page is deployed by deploy.yml from main, not here.
 # "Run workflow" with an existing tag and publish off verifies, checks the
@@ -75,6 +76,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      # Trusted publishing: npm exchanges this job's OIDC token for a one-time
+      # publish token, so no NPM_TOKEN secret is needed.
+      id-token: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:

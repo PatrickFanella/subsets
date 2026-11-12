@@ -32,14 +32,23 @@ marks the GitHub release as a pre-release; a plain version publishes as `latest`
 "Run workflow" with an existing tag and **publish** off runs `verify`, packs,
 checks the registry logins and changes nothing. Use it after rotating a secret.
 
-## Secrets
+## npm authentication
 
-GitHub repository secrets used by `release.yml`:
+Public npm uses trusted publishing: npm accepts a publish from this repository's
+`release.yml` without a stored token, and adds provenance. It is configured on
+npmjs.com under the package's Settings, Trusted publishing, with organization
+`subculture-collective`, repository `subsets`, workflow `release.yml` and no
+environment. `repository.url` in `package.json` must stay the GitHub URL. With
+trusted publishing in place, set Publishing access to "Require two-factor
+authentication and disallow tokens"; that setting does not block trusted
+publishing.
 
-| Secret            | Holds                                                                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NPM_TOKEN`       | A granular npmjs.org access token with read and write access to the `@subcult` packages and "bypass two-factor authentication" enabled, so CI can publish. |
-| `GITEA_NPM_TOKEN` | Optional. A Gitea token with package write access to `subculture-collective`. Without it the Gitea registry is skipped.                                    |
+An `NPM_TOKEN` repository secret, when set, is used instead. Leave it unset
+unless trusted publishing is unavailable.
+
+| Secret            | Holds                                                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `GITEA_NPM_TOKEN` | Optional. A Gitea token with package write access to `subculture-collective`. Without it the Gitea registry is skipped. |
 
 The Gitea workflow uses `NPM_TOKEN`, `ALMAZ_DEPLOY_KEY_B64` (the release SSH
 key, base64-encoded on one line) and `ALMAZ_KNOWN_HOSTS` from Gitea's secrets.
