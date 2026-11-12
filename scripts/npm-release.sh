@@ -40,7 +40,7 @@ for registry in "$gitea" "$public"; do
   fi
   if [ "$mode" = check ]; then
     if [ "$oidc" = true ]; then
-      echo "$label: trusted publishing (OIDC); npm checks the publisher at publish time"
+      bash scripts/npm-oidc-check.sh "$name"
     else
       echo "$label: authenticated as $(npm whoami --registry "$registry")"
     fi

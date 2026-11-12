@@ -43,7 +43,9 @@ trusted publishing in place, set Publishing access to "Require two-factor
 authentication and disallow tokens"; that setting does not block trusted
 publishing.
 
-An `NPM_TOKEN` repository secret, when set, is used instead. Leave it unset
+A check-only run ("Run workflow" with **publish** off) asks npm for a publish
+token through the trusted publisher and discards it, so a wrong setting shows
+up without a release. An `NPM_TOKEN` repository secret, when set, is used instead. Leave it unset
 unless trusted publishing is unavailable.
 
 | Secret            | Holds                                                                                                                   |

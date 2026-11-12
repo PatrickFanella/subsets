@@ -85,6 +85,10 @@ jobs:
           ref: refs/tags/${{ env.TAG }}
           lfs: true
           persist-credentials: false
+      # A check-only run takes the check script from the dispatched branch.
+      - name: Check script from the dispatched branch
+        if: env.PUBLISH != 'true'
+        run: git fetch -q --depth 1 origin "$GITHUB_SHA" && git checkout -q FETCH_HEAD -- scripts/npm-release.sh scripts/npm-oidc-check.sh
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
