@@ -1,0 +1,120 @@
+name: Release
+run-name: Release ${{ github.event.inputs.tag || github.ref_name }}
+
+# A version tag (v0.2.0-alpha.7) verifies the tagged commit, packs it once,
+# publishes that tarball to public npm and attaches it to a GitHub release.
+# The Gitea registry is published too when the GITEA_NPM_TOKEN secret is set.
+# The landing page is deployed by deploy.yml from main, not here.
+# "Run workflow" with an existing tag and publish off verifies, checks the
+# registry login and changes nothing. See docs/releases.md.
+'on':
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v0.2.0-alpha.6
+        required: true
+      publish:
+        description: Publish (off checks only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  PUBLISH: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
+
+jobs:
+  verify:
+    if: github.repository == 'subculture-collective/subsets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          lfs: true
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Check the tag
+        shell: bash
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]] || { echo "Not a release tag: $TAG"; exit 1; }
+          version="$(node -p 'require("./package.json").version')"
+          [ "v$version" = "$TAG" ] || { echo "package.json is $version but the tag is $TAG"; exit 1; }
+      - name: Node checks
+        shell: bash
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+          npm run format:check
+          [ "$(node dist/cli.js --version)" = "${TAG#v}" ] || { echo "subsets --version does not match $TAG"; exit 1; }
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Python tests
+        shell: bash
+        run: |
+          python3 -m pip install uv==0.13.6
+          uv sync --python "$(command -v python3)" --frozen --extra test
+          uv run --frozen --extra test python -m pytest
+
+  npm:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          lfs: true
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Pack
+        shell: bash
+        run: |
+          npm ci
+          tarball="$(npm pack --json | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0))[0].filename)')"
+          sha256sum "$tarball" > "$tarball.sha256"
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+          cat "$tarball.sha256"
+      - name: Check registries
+        if: env.PUBLISH != 'true'
+        env:
+          GITEA_NPM_TOKEN: ${{ secrets.GITEA_NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bash scripts/npm-release.sh check "$TARBALL"
+      - name: Publish
+        if: env.PUBLISH == 'true'
+        env:
+          GITEA_NPM_TOKEN: ${{ secrets.GITEA_NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bash scripts/npm-release.sh publish "$TARBALL"
+      - name: GitHub release
+        if: env.PUBLISH == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          prerelease=(); [[ "$TAG" == *-* ]] && prerelease=(--prerelease --latest=false)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TAG" "${prerelease[@]}" \
+              --notes "npm: [@subcult/subsets@${TAG#v}](https://www.npmjs.com/package/@subcult/subsets/v/${TAG#v})"
+          fi
+          gh release upload "$TAG" "$TARBALL" "$TARBALL.sha256" --clobber

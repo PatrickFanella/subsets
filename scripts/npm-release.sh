@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publish one packed tarball to the Gitea npm registry and public npm.
 # Usage: npm-release.sh check|publish TARBALL
-# Needs GITEA_NPM_TOKEN; NPM_TOKEN is needed only for public npm.
+# NPM_TOKEN is required. Without GITEA_NPM_TOKEN the Gitea registry is skipped.
 # Tokens reach npm through an npmrc that names the environment variables,
 # so they never appear on a command line or in the log.
 set -euo pipefail
@@ -25,6 +25,9 @@ published() { npm view "$name@$version" version --registry "$1" >/dev/null 2>&1;
 
 for registry in "$gitea" "$public"; do
   label=gitea; [ "$registry" = "$public" ] && label=npm
+  if [ "$label" = gitea ] && [ -z "$GITEA_NPM_TOKEN" ]; then
+    echo "gitea: GITEA_NPM_TOKEN is not set; skipping the Gitea registry"; continue
+  fi
   if [ "$label" = npm ] && [ -z "$NPM_TOKEN" ]; then
     echo "::error::NPM_TOKEN is not set; public npm cannot be published"; exit 1
   fi

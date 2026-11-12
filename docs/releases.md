@@ -1,50 +1,48 @@
 # Releases
 
-A version tag releases Subsets: it publishes the npm package to the Gitea
-registry and public npm, creates the Gitea release, and deploys the landing page
-at https://subsets.subcult.tv. Use the same flow for `@subcult/patstack` in the
-`generic-skills` repository, which has the npm and Gitea release steps but no site.
+A version tag releases Subsets. `.github/workflows/release.yml` on GitHub
+publishes the npm package to public npm and creates the GitHub release. It also
+publishes to the Gitea npm registry when the `GITEA_NPM_TOKEN` secret is set.
+The landing page at https://subsets.subcult.tv is deployed from `main` by
+`.github/workflows/deploy.yml`, so every merge to `main` updates it.
 
-Verified pushes to `main` also update the landing page through the CI workflow.
-That lane builds and checks the landing image after both quality jobs succeed;
-it uses `subsets-landing-main:<full-revision>` and never runs the package release
-jobs. The tagged package/site workflow below retains its own image namespace and
-publication steps. A manual CI dispatch retries the current main landing page.
+`.gitea/workflows/release.yml` is the older release workflow. Kvant copies tags
+from GitHub to Gitea, and copied tags do not start Gitea workflows, so it runs
+only when dispatched by hand. Use it to deploy the landing page of a historical
+tag (see Roll back).
 
 ## Cut a release
 
 Bump `package.json`, `package-lock.json` and `VERSION` in `node/src/cli.ts`
-together, merge, then tag the merge commit on `main`:
+together, merge, then tag the merge commit on `main` and push the tag to GitHub:
 
 ```sh
-git tag -a v0.2.0-alpha.5 -m "Subsets 0.2.0-alpha.5" origin/main
-git push origin v0.2.0-alpha.5
+git tag -a v0.2.0-alpha.7 -m "Subsets 0.2.0-alpha.7" origin/main
+git push origin v0.2.0-alpha.7
 ```
 
-A pre-release part (`-alpha.5`) publishes under that npm dist-tag (`alpha`) and
-marks the Gitea release as a pre-release; a plain version publishes as `latest`.
+A pre-release part (`-alpha.7`) publishes under that npm dist-tag (`alpha`) and
+marks the GitHub release as a pre-release; a plain version publishes as `latest`.
 
-`.gitea/workflows/release.yml` then runs:
-
-| Job | Does |
-|---|---|
-| `verify` | Checks that the tag, `package.json` and `subsets --version` agree, then runs the Node tests, typecheck, format check and Python tests on the tagged commit. The other jobs wait for it. |
-| `npm` | Packs once and publishes that tarball to the Gitea registry and public npm. A registry that already has the version is skipped, so a rerun is safe. Each registry must then serve the packed integrity. Attaches the tarball and its SHA-256 to the Gitea release. |
-| `site` | Builds `deploy/Dockerfile` labelled with the revision, streams it to Almaz over SSH and deploys it. |
+| Job      | Does                                                                                                                                                                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify` | Checks that the tag, `package.json` and `subsets --version` agree, then runs the Node tests, typecheck, format check and Python tests on the tagged commit.                                                                                                                   |
+| `npm`    | Packs once and publishes that tarball to public npm (and Gitea, if its token is set). A registry that already has the version is skipped, so a rerun is safe. Each registry must then serve the packed integrity. Attaches the tarball and its SHA-256 to the GitHub release. |
 
 "Run workflow" with an existing tag and **publish** off runs `verify`, packs,
-checks both registry logins and the Almaz key, and changes nothing. Use it after
-rotating a secret.
+checks the registry logins and changes nothing. Use it after rotating a secret.
 
 ## Secrets
 
-| Secret | Holds |
-|---|---|
-| `NPM_TOKEN` | A granular npmjs.org access token with read and write access to the `@subcult` packages and "bypass two-factor authentication" enabled, so CI can publish. |
-| `ALMAZ_DEPLOY_KEY_B64` | The release SSH key, base64-encoded on one line. Gitea masks a secret only where the printed text matches exactly, which a multi-line key does not. |
-| `ALMAZ_KNOWN_HOSTS` | Almaz's host key line for `10.0.0.200`. |
+GitHub repository secrets used by `release.yml`:
 
-The Gitea registry uses the workflow's own token, which expires with the job.
+| Secret            | Holds                                                                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NPM_TOKEN`       | A granular npmjs.org access token with read and write access to the `@subcult` packages and "bypass two-factor authentication" enabled, so CI can publish. |
+| `GITEA_NPM_TOKEN` | Optional. A Gitea token with package write access to `subculture-collective`. Without it the Gitea registry is skipped.                                    |
+
+The Gitea workflow uses `NPM_TOKEN`, `ALMAZ_DEPLOY_KEY_B64` (the release SSH
+key, base64-encoded on one line) and `ALMAZ_KNOWN_HOSTS` from Gitea's secrets.
 Keep every secret on one line.
 
 ## The deploy on Almaz
@@ -87,7 +85,7 @@ deploy/install-release-tools.sh
 
 npm versions are immutable: publish a fixed version, or move the dist-tag back
 with `npm dist-tag add @subcult/subsets@PREVIOUS alpha`. For the site, rerun
-the release workflow for the previous tag with publish on; its image is rebuilt
+the Gitea release workflow for the previous tag with publish on; its image is rebuilt
 and deployed, and the receipt names the image it replaced.
 
 Finish or cancel pending main landing runs before deliberately restoring an

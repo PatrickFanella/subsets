@@ -2,14 +2,13 @@
 
 Subsets discovers agent skills on disk, helps organize named groups, and applies a selection through registered folder ownership or the existing codex-skills backend. The native npm edition uses TypeScript and Ink. Open the TUI with `subsets`; automate the same operations with its CLI.
 
-The native alpha requires Node.js 22 or newer and has been qualified on Linux. macOS has not been qualified; Windows is unsupported. The original Python edition requires Python 3.11 or newer and uses Textual and POSIX filesystem locks. The native edition uses Ink and an exclusive directory lock. The source repository is [subculture-collective/subsets](https://git.subcult.tv/subculture-collective/subsets). The alpha is distributed through the SUBCULT registry; npmjs.org publication is pending account setup.
+The native alpha requires Node.js 22 or newer and has been qualified on Linux. macOS has not been qualified; Windows is unsupported. The original Python edition requires Python 3.11 or newer and uses Textual and POSIX filesystem locks. The native edition uses Ink and an exclusive directory lock. The source repository is [subculture-collective/subsets](https://github.com/subculture-collective/subsets). The alpha is published to npmjs.org as `@subcult/subsets` under the `alpha` dist-tag.
 
 ## Install and open
 
-The native npm app requires Node.js 22 or newer. Configure the SUBCULT package scope once, then install the preview:
+The native npm app requires Node.js 22 or newer. Install the preview from public npm:
 
 ```sh
-npm config set @subcult:registry https://git.subcult.tv/api/packages/subculture-collective/npm/
 npm install -g @subcult/subsets@alpha
 subsets
 ```
@@ -21,14 +20,14 @@ npx @subcult/subsets@alpha discover --json
 npx @subcult/subsets@alpha
 ```
 
-The registry may require an account with package read access. See [npm installation and development](npm.md) for authentication, local package testing, state ownership, and updates.
+If you earlier pointed the `@subcult` scope at Gitea, run `npm config set @subcult:registry https://registry.npmjs.org/` first. See [npm installation and development](npm.md) for local package testing, state ownership, and updates.
 
 The native standalone workflow requires no Python. The existing codex-skills adapter uses that installation’s Python 3 helpers; set `SUBSETS_PYTHON` to select its interpreter.
 
 The original Python implementation remains available during the port:
 
 ```sh
-uv tool install git+https://git.subcult.tv/subculture-collective/subsets.git
+uv tool install git+https://github.com/subculture-collective/subsets.git
 ```
 
 Both installations provide a `subsets` command; choose which launcher is on your PATH. They have separate registries and cannot adopt a folder owned by the other installation.

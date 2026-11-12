@@ -19,7 +19,7 @@
     "opencode"
   ],
   "bugs": {
-    "url": "https://git.subcult.tv/subculture-collective/subsets/issues"
+    "url": "https://github.com/subculture-collective/subsets/issues"
   },
   "engines": {
     "node": ">=22"
@@ -49,7 +49,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://git.subcult.tv/subculture-collective/subsets.git"
+    "url": "git+https://github.com/subculture-collective/subsets.git"
   },
   "dependencies": {
     "ink": "^6.8.0",
