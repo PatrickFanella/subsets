@@ -6,9 +6,10 @@ name: Release
 # with an existing tag and publish off verifies, checks both registry
 # credentials and the Almaz key, and changes nothing. See docs/releases.md.
 
+# The tag trigger was removed on 2026-11-13: GitHub release.yml publishes npm
+# for each v* tag and GitHub deploy.yml deploys the landing page from main, so
+# a tag also run here published and deployed twice. Run by hand if needed.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
